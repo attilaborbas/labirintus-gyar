@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="__DESCRIPTION__">
+<title>Maze Factory · Puzzles</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>:root{color-scheme:light}html,body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<style>/*__CSS__*/</style>
+</head>
+<body class="mode-puzzles">
+<div class="app puz">
+  <header class="head">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M6 6H34V34H11V12H28V28H17V18H23"/></svg>
+      <div>
+        <h1 data-t="brand"></h1>
+        <p class="quest" data-t="tag"></p>
+      </div>
+    </div>
+    <nav class="sitenav" aria-label="Menu">
+      <a class="navlink" href="index.html" data-nav="play" data-t="navPlay"></a>
+      <a class="navlink" href="print.html" data-nav="print" data-t="navPrint"></a>
+      <a class="navlink" href="puzzles.html" data-nav="puzzles" data-t="navPuzzles"></a>
+    </nav>
+    <div class="tools">
+      <label class="icon-btn lang">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+        <span id="langCode" aria-hidden="true"></span>
+        <select id="langSel" data-t-aria="language"></select>
+      </label>
+    </div>
+  </header>
+
+  <section class="pick" data-t-aria="settings">
+    <div>
+      <h2 class="label" data-t="typeQ"></h2>
+      <div class="chips c2" id="types"></div>
+    </div>
+    <div>
+      <h2 class="label" data-t="ageQ"></h2>
+      <div class="chips c3 bands" id="bands"></div>
+    </div>
+    <div id="optWs">
+      <h2 class="label" data-t="themeQ"></h2>
+      <div class="chips sm" id="themes"></div>
+    </div>
+    <div id="optDots">
+      <h2 class="label" data-t="shapeQ"></h2>
+      <div class="chips sm" id="dshapes"></div>
+      <h2 class="label gap" data-t="stepQ"></h2>
+      <div class="chips c5 sm" id="steps"></div>
+    </div>
+  </section>
+
+  <section class="stagecol" data-t-aria="sheetAria">
+    <div class="statbar"><span class="stat" id="cap"></span></div>
+    <div class="sheet" id="sheet" role="img" data-t-aria="sheetAria"></div>
+    <p class="sr-only" id="live" aria-live="polite"></p>
+  </section>
+
+  <section class="play" data-t-aria="controls">
+    <div class="actions">
+      <button class="btn primary" id="newBtn" type="button">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+        <span data-t="newPuz"></span>
+      </button>
+      <button class="btn wide" id="solBtn" type="button" aria-pressed="false">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span id="solLbl"></span>
+      </button>
+    </div>
+    <form class="seed" id="seedForm">
+      <label for="seedIn" data-t="seedLabel"></label>
+      <input id="seedIn" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off">
+      <button class="btn small" type="submit" data-t="seedLoad"></button>
+    </form>
+    <p class="note err" id="seedMsg" role="status"></p>
+    <p class="note" data-t="seedNote"></p>
+  </section>
+
+  <section class="print" aria-labelledby="pdfTitle">
+    <h2 class="print-title" id="pdfTitle" data-t="pdfTitle"></h2>
+    <p class="note" data-t="pdfNote"></p>
+    <div class="pdf-row">
+      <h3 class="label" data-t="countQ"></h3>
+      <div class="stepper">
+        <button class="btn step" id="cntMinus" type="button">−</button>
+        <output id="cntOut">1</output>
+        <button class="btn step" id="cntPlus" type="button">+</button>
+      </div>
+    </div>
+    <label class="check" for="optSol"><input type="checkbox" id="optSol" checked><span data-t="pdfSol"></span></label>
+    <p class="sum" id="pdfSum"></p>
+    <button class="btn primary" id="pdfBtn" type="button">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+      <span data-t="pdfSave"></span>
+    </button>
+    <p class="note" id="pdfMsg" role="status"></p>
+  </section>
+</div>
+
+<script>/*__BUNDLE__*/</script>
+</body>
+</html>

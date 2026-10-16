@@ -1,0 +1,26 @@
+/* puzzle page */
+body.mode-puzzles .sitenav{display:flex}
+.app.puz{grid-template-areas:"head" "pick" "stage" "play" "print"}
+@media (min-width:900px){
+  .app.puz{
+    grid-template-columns:minmax(0,1fr) 380px;
+    grid-template-areas:"head head" "stage pick" "stage play" "stage print";
+    grid-template-rows:auto auto auto 1fr;
+  }
+}
+.puz .stagecol{width:min(100%,600px)}
+.sheet{
+  background:#fff;border:3px solid var(--outline);border-radius:18px;box-shadow:0 6px 0 var(--edge);
+  overflow:hidden;aspect-ratio:515/660;max-width:100%;
+}
+.sheet svg{display:block;width:100%;height:100%;font-family:"Nunito","DejaVu Sans",system-ui,sans-serif}
+.chips.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.chips.c2 .chip,.chips.c3.bands .chip{min-height:64px;font-size:1.05rem}
+.chip small{font:800 .78rem/1 var(--font-body);color:var(--ink-soft)}
+.chip[aria-pressed="true"] small{color:var(--on-accent)}
+.chips.sm .chip{min-height:52px;font-size:.88rem;padding:6px 2px}
+.puz .label.gap{margin-top:14px}
+.puz .actions .wide{grid-column:1/-1}
+.puz .print{gap:12px}
+.pdf-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pdf-row .label{margin:0}

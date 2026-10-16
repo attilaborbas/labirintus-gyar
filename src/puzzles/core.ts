@@ -1,41 +1,39 @@
-//#region puzzle-core
-// Shared base of the puzzles: randomness, age bands, drawing operations (screen SVG and PDF).
-const PW = 515, PH = 660;   // logical drawing area of one puzzle (points, 1:1 on A4)
+// Shared base of the puzzles: age bands, drawing operations (screen SVG and PDF).
+import { mulberry32, shuffle } from '../shared/random.ts';
+import type { Rng } from '../shared/random.ts';
+export { shuffle };
 
-function mulberry32(a){
-  return function(){
-    a |= 0; a = a + 0x6D2B79F5 | 0;
-    let t = Math.imul(a ^ a >>> 15, 1 | a);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-}
-function shuffle(arr, rnd){
-  for(let i = arr.length - 1; i > 0; i--){
-    const j = Math.floor(rnd() * (i + 1));
-    const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
-  }
-  return arr;
-}
-function strHash(s){ let h = 7; for(let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; }
-function puzzleRng(seed, band, salt){ return mulberry32(seed * 7919 + band * 104729 + strHash(salt)); }
+export const PW = 515, PH = 660;   // logical drawing area of one puzzle (points, 1:1 on A4)
 
+export type { Rng };
+
+function strHash(s: string): number { let h = 7; for(let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; }
+export function puzzleRng(seed: number, band: number, salt: string): Rng { return mulberry32(seed * 7919 + band * 104729 + strHash(salt)); }
+
+export type Dir = [number, number];
 // Age bands: 0 = ages 6–7, 1 = ages 8–9, 2 = ages 10–12.
-const ALL_DIRS = [[1, 0], [0, 1], [1, 1], [-1, 0], [0, -1], [-1, -1], [1, -1], [-1, 1]];
-const BANDS = [
+const ALL_DIRS: Dir[] = [[1, 0], [0, 1], [1, 1], [-1, 0], [0, -1], [-1, -1], [1, -1], [-1, 1]];
+export interface BandSettings {
+  ws: { n: number; count: number; minLen: number; maxLen: number; dirs: Dir[] };
+  dots: { n: number; step: number };
+}
+export const BANDS: BandSettings[] = [
   { ws: { n: 7,  count: 6,  minLen: 3, maxLen: 5,  dirs: [[1, 0], [0, 1]] },         dots: { n: 24,  step: 1 } },
   { ws: { n: 10, count: 8,  minLen: 3, maxLen: 7,  dirs: [[1, 0], [0, 1], [1, 1]] }, dots: { n: 40,  step: 2 } },
   { ws: { n: 14, count: 12, minLen: 4, maxLen: 10, dirs: ALL_DIRS },                 dots: { n: 80,  step: 5 } }
 ];
 
 // ---- drawing operations ----
-// {k:'line', x1,y1,x2,y2, w, g}        g = gray level 0 (black) … 255 (white)
-// {k:'circle', x,y,r, w, g, fill}      fill = gray level or null
-// {k:'poly', pts:[[x,y],…], w, g, close}
-// {k:'text', x,y, s, size, b, a:'l'|'c'|'r', g}   y = baseline
-function gray(g){ g = g == null ? 0 : g; return 'rgb(' + g + ',' + g + ',' + g + ')'; }
-function esc(s){ return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-function opsToSvg(ops){
+// g = gray level 0 (black) … 255 (white); fill = gray level or undefined; y of text = baseline.
+export interface LineOp { k: 'line'; x1: number; y1: number; x2: number; y2: number; w: number; g?: number }
+export interface CircleOp { k: 'circle'; x: number; y: number; r: number; w?: number; g?: number; fill?: number }
+export interface PolyOp { k: 'poly'; pts: [number, number][]; w: number; g?: number; close?: boolean }
+export interface TextOp { k: 'text'; x: number; y: number; s: string | number; size: number; b?: boolean; a?: 'l' | 'c' | 'r'; g?: number }
+export type Op = LineOp | CircleOp | PolyOp | TextOp;
+
+function gray(g?: number): string { const v = g == null ? 0 : g; return 'rgb(' + v + ',' + v + ',' + v + ')'; }
+function esc(s: string | number): string { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+export function opsToSvg(ops: Op[]): string {
   let out = '';
   for(const o of ops){
     if(o.k === 'line'){
@@ -47,14 +45,14 @@ function opsToSvg(ops){
     } else if(o.k === 'poly'){
       out += '<' + (o.close ? 'polygon' : 'polyline') + ' points="' + o.pts.map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ') +
         '" fill="none" stroke="' + gray(o.g) + '" stroke-width="' + o.w + '" stroke-linejoin="round" stroke-linecap="round"/>';
-    } else if(o.k === 'text'){
+    } else {
       out += '<text x="' + o.x.toFixed(2) + '" y="' + o.y.toFixed(2) + '" font-size="' + o.size + '" font-weight="' + (o.b ? 800 : 600) +
         '" text-anchor="' + (o.a === 'c' ? 'middle' : o.a === 'r' ? 'end' : 'start') + '" fill="' + gray(o.g) + '">' + esc(o.s) + '</text>';
     }
   }
   return out;
 }
-function opsToPdf(doc, ops, ox, oy, sc){
+export function opsToPdf(doc: PdfDoc, ops: Op[], ox: number, oy: number, sc: number): void {
   doc.setLineCap('round'); doc.setLineJoin('round');
   for(const o of ops){
     if(o.k === 'line'){
@@ -71,7 +69,7 @@ function opsToPdf(doc, ops, ox, oy, sc){
         const a = o.pts[i], b = o.pts[(i + 1) % n];
         doc.line(ox + a[0] * sc, oy + a[1] * sc, ox + b[0] * sc, oy + b[1] * sc);
       }
-    } else if(o.k === 'text'){
+    } else {
       doc.setFont('DejaVu', o.b ? 'bold' : 'normal'); doc.setFontSize(o.size * sc); doc.setTextColor(o.g || 0);
       doc.text(String(o.s), ox + o.x * sc, oy + o.y * sc, { align: o.a === 'c' ? 'center' : o.a === 'r' ? 'right' : 'left' });
     }
@@ -79,9 +77,16 @@ function opsToPdf(doc, ops, ox, oy, sc){
 }
 
 // ---- PDF pages ----
-// items: [{ type, p, caption, instr, solCaption }], opts: { solutions, tx, draw: (item, solution) => ops }
+export interface PuzzleBase { caption: string; instr: string; solCaption: string }
+export interface PdfStrings { brand: string; title: string; name: string; footer: string; solSub: string }
+export interface PdfFonts { reg: string; bold: string }
+export interface PdfOptions<I extends PuzzleBase> {
+  solutions: boolean;
+  tx: PdfStrings;
+  draw: (item: I, solution: boolean) => Op[];
+}
 const PDF_W = 595.28, PDF_H = 841.89;
-function buildPuzzlePdf(jsPDF, fonts, items, opts){
+export function buildPuzzlePdf<I extends PuzzleBase>(jsPDF: PdfCtor, fonts: PdfFonts, items: I[], opts: PdfOptions<I>): ArrayBuffer {
   const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true });
   doc.addFileToVFS('DejaVuSans.ttf', fonts.reg); doc.addFont('DejaVuSans.ttf', 'DejaVu', 'normal');
   doc.addFileToVFS('DejaVuSans-Bold.ttf', fonts.bold); doc.addFont('DejaVuSans-Bold.ttf', 'DejaVu', 'bold');
@@ -89,7 +94,7 @@ function buildPuzzlePdf(jsPDF, fonts, items, opts){
   doc.setProperties({ title: tx.title, author: tx.brand });
   const AX = 40, AY = 100;
   let first = true;
-  function newPage(sub){
+  function newPage(sub: string): void {
     if(!first) doc.addPage();
     first = false;
     doc.setTextColor(0);
@@ -122,4 +127,3 @@ function buildPuzzlePdf(jsPDF, fonts, items, opts){
   }
   return doc.output('arraybuffer');
 }
-//#endregion

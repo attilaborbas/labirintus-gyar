@@ -1,7 +1,23 @@
-//#region pdf
+import { DX, DY, bfs, generate, makeMask, maskRows } from './core.ts';
+import type { Shape } from './core.ts';
+
 const PDF_W = 595.28, PDF_H = 841.89;
 
-function pdfMaze(level, seed){
+export interface PdfLevel { name: string; n: number; braid: number; shape?: Shape; custom?: boolean }
+export interface PdfBatch extends PdfLevel { seeds: number[] }
+export interface PdfFonts { reg: string; bold: string }
+export interface PdfMazeStrings {
+  brand: string; title: string; name: string; instr: string; solSub: string; footer: string; start: string; goal: string;
+  caption: (level: string, n: number, seed: number) => string;
+}
+export interface PdfOptions { per: number; solutions: boolean; tx: PdfMazeStrings }
+
+interface PdfMaze {
+  mask: Uint8Array | null; level: string; n: number; seed: number; custom: boolean; pct: number;
+  walls: Uint8Array; start: number; goal: number; sol: number[] | null;
+}
+
+function pdfMaze(level: PdfLevel, seed: number): PdfMaze {
   const shape = level.shape || 0, mask = makeMask(shape, level.n), m = generate(level.n, seed, level.braid, mask, shape);
   return { mask: mask, level: level.name, n: level.n, seed: seed, custom: !!level.custom, pct: Math.round(level.braid * 100), walls: m.walls, start: m.start, goal: m.goal,
            sol: bfs(m.walls, level.n, m.start, m.goal) };
@@ -9,7 +25,7 @@ function pdfMaze(level, seed){
 
 // The outer wall of the START and GOAL cells stays open so there is an entrance and an exit.
 // Which side of the START / GOAL cell to open: the first free side in the order up, down, right, left.
-function gateDir(m, i){
+function gateDir(m: PdfMaze, i: number): number {
   const n = m.n, cx = i % n, cy = (i / n) | 0;
   if(m.mask){
     const rr = maskRows(m.mask, n);
@@ -25,11 +41,11 @@ function gateDir(m, i){
   }
   return 0;
 }
-function pdfDrawMaze(doc, m, x, y, size, solution){
+function pdfDrawMaze(doc: PdfDoc, m: PdfMaze, x: number, y: number, size: number, solution: boolean): number {
   const n = m.n, cs = size / n, w = m.walls;
   const lw = Math.max(1.3, Math.min(4.5, cs * 0.14));
   doc.setLineCap('round'); doc.setLineJoin('round');
-  if(solution){
+  if(solution && m.sol){
     doc.setDrawColor(150); doc.setLineWidth(Math.max(1.6, cs * 0.3));
     for(let i = 0; i < m.sol.length - 1; i++){
       const a = m.sol[i], b = m.sol[i + 1];
@@ -38,8 +54,8 @@ function pdfDrawMaze(doc, m, x, y, size, solution){
     }
   }
   doc.setDrawColor(0); doc.setLineWidth(lw);
-  const gs = gateDir(m, m.start), gg = gateDir(m, m.goal), mk = m.mask, inM = i => !mk || mk[i] === 1;
-  const open = (i, d) => (i === m.start && d === gs) || (i === m.goal && d === gg);
+  const gs = gateDir(m, m.start), gg = gateDir(m, m.goal), mk = m.mask, inM = (i: number) => !mk || mk[i] === 1;
+  const open = (i: number, d: number) => (i === m.start && d === gs) || (i === m.goal && d === gg);
   for(let cy = 0; cy < n; cy++) for(let cx = 0; cx < n; cx++){
     const i = cy * n + cx, k = w[i], x0 = x + cx * cs, y0 = y + cy * cs;
     if(!inM(i)) continue;
@@ -51,10 +67,11 @@ function pdfDrawMaze(doc, m, x, y, size, solution){
   return lw;
 }
 
-function pdfGateLabels(doc, m, x, y, size, lw, tx){
+function pdfGateLabels(doc: PdfDoc, m: PdfMaze, x: number, y: number, size: number, lw: number, tx: PdfMazeStrings): void {
   const n = m.n, cs = size / n, fs = Math.max(8, Math.min(14, cs * 0.5));
   doc.setFont('DejaVu', 'bold'); doc.setFontSize(fs);
-  [[m.start, tx.start], [m.goal, tx.goal]].forEach(p => {
+  const gates: [number, string][] = [[m.start, tx.start], [m.goal, tx.goal]];
+  gates.forEach(p => {
     const d = gateDir(m, p[0]), cx = x + (p[0] % n + 0.5) * cs, cyy = y + (((p[0] / n) | 0) + 0.5) * cs;
     if(d === 0) doc.text(p[1], cx, cyy - cs / 2 - lw - 3, { align: 'center' });
     else if(d === 2) doc.text(p[1], cx, cyy + cs / 2 + lw + fs, { align: 'center' });
@@ -63,7 +80,7 @@ function pdfGateLabels(doc, m, x, y, size, lw, tx){
   });
 }
 
-function buildPdf(jsPDF, fonts, batches, opts){
+export function buildPdf(jsPDF: PdfCtor, fonts: PdfFonts, batches: PdfBatch[], opts: PdfOptions): ArrayBuffer {
   const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true });
   doc.addFileToVFS('DejaVuSans.ttf', fonts.reg); doc.addFont('DejaVuSans.ttf', 'DejaVu', 'normal');
   doc.addFileToVFS('DejaVuSans-Bold.ttf', fonts.bold); doc.addFont('DejaVuSans-Bold.ttf', 'DejaVu', 'bold');
@@ -72,7 +89,7 @@ function buildPdf(jsPDF, fonts, batches, opts){
   const AX = 40, AY = 100, AW = PDF_W - 80, AH = PDF_H - 140;
   let first = true;
 
-  function newPage(sub){
+  function newPage(sub: string): void {
     if(!first) doc.addPage();
     first = false;
     doc.setTextColor(0);
@@ -83,7 +100,7 @@ function buildPdf(jsPDF, fonts, batches, opts){
     doc.text(tx.footer, PDF_W / 2, PDF_H - 22, { align: 'center' });
     doc.setTextColor(0);
   }
-  function place(m, col, row, cols, rows, solution){
+  function place(m: PdfMaze, col: number, row: number, cols: number, rows: number, solution: boolean): void {
     const cw = AW / cols, ch = AH / rows;
     const size = Math.min(cw - 24, ch - 64);
     const x = AX + col * cw + (cw - size) / 2, top = AY + row * ch;
@@ -94,9 +111,9 @@ function buildPdf(jsPDF, fonts, batches, opts){
     if(!solution) pdfGateLabels(doc, m, x, y, size, lw, tx);
   }
 
-  const grids = { 1: [1, 1], 2: [1, 2], 4: [2, 2] };
+  const grids: Record<number, [number, number]> = { 1: [1, 1], 2: [1, 2], 4: [2, 2] };
   const g = grids[opts.per] || grids[1], cols = g[0], rows = g[1], per = cols * rows;
-  const all = [];
+  const all: PdfMaze[] = [];
   batches.forEach(b => {
     const list = b.seeds.map(s => pdfMaze(b, s));
     list.forEach(m => all.push(m));
@@ -113,4 +130,3 @@ function buildPdf(jsPDF, fonts, batches, opts){
   }
   return doc.output('arraybuffer');
 }
-//#endregion

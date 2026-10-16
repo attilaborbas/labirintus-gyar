@@ -1,6 +1,7 @@
-//#region puzzle-words
 // Word lists for the word search and scramble. Upper case, single words, no spaces or hyphens.
-const WS_THEMES = [
+import type { Lang } from '../shared/i18n.ts';
+export interface Theme { id: string; name: Record<Lang, string>; w: Record<Lang, string> }
+export const WS_THEMES: Theme[] = [
   { id: 'animals', name: { hu: 'Állatok', en: 'Animals' }, w: {
     hu: 'KUTYA MACSKA MADÁR TEHÉN DISZNÓ KECSKE NYÚL EGÉR MÉH PILLANGÓ KÍGYÓ BÉKA TEKNŐS OROSZLÁN ELEFÁNT MAJOM ZEBRA MEDVE RÓKA FARKAS SÜNI VERÉB SZARVAS KACSA LIBA CSIRKE HOLLÓ DELFIN CICA MÓKUS HAL',
     en: 'DOG CAT BIRD COW PIG SHEEP GOAT RABBIT MOUSE BEE BUTTERFLY SNAKE FROG TURTLE LION ELEPHANT MONKEY ZEBRA BEAR FOX WOLF HEDGEHOG DUCK GOOSE HORSE FISH DOLPHIN SQUIRREL OWL DEER' } },
@@ -23,12 +24,11 @@ const WS_THEMES = [
     hu: 'AUTÓ BUSZ VONAT HAJÓ REPÜLŐ BICIKLI KOCSI TAXI METRÓ VILLAMOS TRAKTOR MOTOR KERÉK ÚT SÍN HÍD KIKÖTŐ REPTÉR RAKÉTA ROBOGÓ TEHERAUTÓ MENTŐ',
     en: 'CAR BUS TRAIN SHIP PLANE BIKE TAXI METRO TRAM TRACTOR MOTORBIKE WHEEL ROAD RAIL BRIDGE PORT AIRPORT ROCKET SCOOTER TRUCK AMBULANCE' } }
 ];
-function themeWords(id, lang){
+export function themeWords(id: string, lang: Lang): string[] {
   if(id === 'mix' || !WS_THEMES.some(t => t.id === id)){
-    const all = [];
+    const all: string[] = [];
     WS_THEMES.forEach(t => t.w[lang].split(' ').forEach(w => { if(all.indexOf(w) < 0) all.push(w); }));
     return all;
   }
   return WS_THEMES.filter(t => t.id === id)[0].w[lang].split(' ');
 }
-//#endregion

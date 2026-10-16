@@ -16,21 +16,27 @@ Every page remembers its own settings in `localStorage`; only the language is sh
 
 ## Development
 
-The three HTML files in the repo root are generated, so edit `src/` and rebuild:
+The code is TypeScript (strict). The three HTML files in the repo root are generated from `src/` by esbuild, so edit `src/` and rebuild:
 
 ```
-node build.js
+npm install
+npm run build       # writes index.html, print.html and puzzles.html
+npm test            # type-check (tsc --strict) and generator tests
+npm run test:e2e    # optional browser smoke test (needs Playwright, see the file header)
 ```
 
-| Source | Purpose |
+| Path | Purpose |
 | --- | --- |
-| `src/maze.template.html` | Shared page for `index.html` and `print.html` (maze generator, UI, texts) |
-| `src/pdf-maze.js` | Maze PDF drawing |
-| `src/puzzles.template.html` | Puzzles page (UI, texts, PDF export) |
-| `src/puzzle-*.js` | Puzzle generators and drawing: core, words, wordsearch, dots, math, scramble, spot |
+| `src/maze/` | Maze generation (`core.ts`), PDF drawing (`pdf.ts`), sound, texts and the game/print UI (`main.ts`) |
+| `src/puzzles/` | One module per puzzle (`wordsearch`, `dots`, `math`, `scramble`, `spot`), shared drawing/PDF base (`core.ts`), word lists, texts and the page UI (`main.ts`) |
+| `src/shared/` | Seeded random numbers, i18n, storage, DOM and download helpers |
+| `src/pages/` | HTML shells (markup) for the maze pages and the puzzles page |
+| `src/styles/` | CSS |
 | `src/fonts/*.b64` | DejaVu Sans subsets (base64) embedded for the PDFs |
+| `types/` | Typings for jsPDF (loaded from a CDN) and the build-time font constants |
+| `tests/` | Generator tests (including a golden snapshot) and the browser smoke test |
 
-Languages are Hungarian and English only (texts live in the `T` dictionaries in the templates).
+Languages are Hungarian and English only (texts live in `texts.ts` next to each page).
 
 ## External resources
 

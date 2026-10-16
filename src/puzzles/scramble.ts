@@ -1,11 +1,15 @@
-//#region puzzle-scramble
+import { PH, puzzleRng, shuffle } from './core.ts';
+import type { Op, Rng } from './core.ts';
+import { themeWords } from './words.ts';
+import type { Lang } from '../shared/i18n.ts';
+
 // Word scramble: work out the word hidden in the mixed-up letters and write it in the boxes.
 const SCR = [
   { n: 6, minLen: 3, maxLen: 5,  hint: true },
   { n: 8, minLen: 4, maxLen: 7,  hint: false },
   { n: 9, minLen: 5, maxLen: 10, hint: false }
 ];
-function scrambleWord(w, rnd){
+function scrambleWord(w: string, rnd: Rng): string {
   const a = w.split('');
   for(let t = 0; t < 50; t++){
     shuffle(a, rnd);
@@ -13,7 +17,8 @@ function scrambleWord(w, rnd){
   }
   return a.join('');
 }
-function genScramble(seed, band, st, lang){
+export interface Scramble { rows: { w: string; s: string }[]; hint: boolean; band: number; lang: Lang; theme: string }
+export function genScramble(seed: number, band: number, st: { theme: string }, lang: Lang): Scramble {
   const B = SCR[band], rnd = puzzleRng(seed, band, 'scr' + st.theme + lang);
   let pool = themeWords(st.theme, lang).filter(w => w.length >= B.minLen && w.length <= B.maxLen);
   if(pool.length < B.n) pool = pool.concat(themeWords('mix', lang).filter(w => w.length >= B.minLen && w.length <= B.maxLen && pool.indexOf(w) < 0));
@@ -22,8 +27,8 @@ function genScramble(seed, band, st, lang){
   const rows = words.map(w => ({ w: w, s: scrambleWord(w, rnd) }));
   return { rows: rows, hint: B.hint, band: band, lang: lang, theme: st.theme };
 }
-function drawScramble(p, solution){
-  const ops = [], n = p.rows.length, rh = Math.min(80, (PH - 10) / n), cell = 32, x0 = 44;
+export function drawScramble(p: Scramble, solution: boolean): Op[] {
+  const ops: Op[] = [], n = p.rows.length, rh = Math.min(80, (PH - 10) / n), cell = 32, x0 = 44;
   p.rows.forEach((r, i) => {
     const y = 8 + i * rh, len = r.w.length;
     ops.push({ k: 'text', x: 4, y: y + 30, s: (i + 1) + ')', size: 14, b: true, a: 'l' });
@@ -38,4 +43,3 @@ function drawScramble(p, solution){
   });
   return ops;
 }
-//#endregion

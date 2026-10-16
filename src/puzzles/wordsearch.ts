@@ -1,16 +1,25 @@
-//#region puzzle-wordsearch
-const WS_ALPHA = {
+import { BANDS, PW, puzzleRng, shuffle } from './core.ts';
+import type { Dir, Op } from './core.ts';
+import { themeWords } from './words.ts';
+import type { Lang } from '../shared/i18n.ts';
+
+const WS_ALPHA: Record<Lang, string> = {
   en: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
   hu: 'AÁBCDEÉFGHIÍJKLMNOÓÖŐPQRSTUÚÜŰVWXYZ'
 };
 
-// st: { theme }, lang: 'hu' | 'en'
-function genWordSearch(seed, band, st, lang){
-  let p = null;
-  for(let a = 0; a < 25; a++){ p = genWordSearchTry(seed, band, st, lang, a); if(p.ok) break; }
+export interface PlacedWord { w: string; x: number; y: number; dx: number; dy: number }
+export interface WordSearch {
+  ok: boolean; n: number; grid: string[]; placed: PlacedWord[]; list: string[];
+  band: number; lang: Lang; theme: string; dirs: number;
+}
+
+export function genWordSearch(seed: number, band: number, st: { theme: string }, lang: Lang): WordSearch {
+  let p = genWordSearchTry(seed, band, st, lang, 0);
+  for(let a = 1; a < 25 && !p.ok; a++) p = genWordSearchTry(seed, band, st, lang, a);
   return p;
 }
-function genWordSearchTry(seed, band, st, lang, attempt){
+function genWordSearchTry(seed: number, band: number, st: { theme: string }, lang: Lang, attempt: number): WordSearch {
   const B = BANDS[band].ws, n = B.n, dirs = B.dirs;
   const rnd = puzzleRng(seed, band, 'ws' + st.theme + lang + (attempt ? '#' + attempt : ''));
   // choose the words
@@ -20,8 +29,8 @@ function genWordSearchTry(seed, band, st, lang, attempt){
     pool = pool.concat(shuffle(extra, rnd));
   }
   shuffle(pool, rnd);
-  const rev = s => s.split('').reverse().join('');
-  const chosen = [];
+  const rev = (s: string) => s.split('').reverse().join('');
+  const chosen: string[] = [];
   for(const w of pool){
     if(chosen.length >= B.count) break;
     // no word may be part of another (forwards or backwards)
@@ -31,14 +40,14 @@ function genWordSearchTry(seed, band, st, lang, attempt){
   chosen.sort((a, b) => b.length - a.length);
 
   // placement
-  let grid, placed;
+  let grid: string[] = [], placed: PlacedWord[] = [];
   for(let round = 0; round < 80; round++){
-    grid = new Array(n * n).fill(''); placed = [];
+    grid = new Array<string>(n * n).fill(''); placed = [];
     let ok = true;
     for(const w of chosen){
       let done = false;
       for(let t = 0; t < 300 && !done; t++){
-        const d = dirs[Math.floor(rnd() * dirs.length)];
+        const d: Dir = dirs[Math.floor(rnd() * dirs.length)];
         const x0 = Math.floor(rnd() * n), y0 = Math.floor(rnd() * n);
         const xe = x0 + d[0] * (w.length - 1), ye = y0 + d[1] * (w.length - 1);
         if(xe < 0 || ye < 0 || xe >= n || ye >= n) continue;
@@ -55,20 +64,19 @@ function genWordSearchTry(seed, band, st, lang, attempt){
       if(!done){ ok = false; break; }
     }
     if(ok) break;
-    if(round === 79) placed = placed.slice();
   }
   const locked = grid.map(c => c !== '');
 
   // filler letters follow the language's letter frequency so accented letters give nothing away
-  const bag = [];
-  const freq = {};
+  const bag: string[] = [];
+  const freq: Record<string, number> = {};
   themeWords('mix', lang).forEach(w => w.split('').forEach(ch => { freq[ch] = (freq[ch] || 0) + 1; }));
   WS_ALPHA[lang].split('').forEach(ch => { const k = Math.max(1, Math.round((freq[ch] || 0) / 4)); for(let i = 0; i < k; i++) bag.push(ch); });
   const fill = () => bag[Math.floor(rnd() * bag.length)];
   for(let i = 0; i < n * n; i++) if(!locked[i]) grid[i] = fill();
 
   // every word must occur exactly once (only in the allowed directions)
-  const countOcc = w => {
+  const countOcc = (w: string): number => {
     let cnt = 0;
     for(let y = 0; y < n; y++) for(let x = 0; x < n; x++) for(const d of dirs){
       const xe = x + d[0] * (w.length - 1), ye = y + d[1] * (w.length - 1);
@@ -90,8 +98,8 @@ function genWordSearchTry(seed, band, st, lang, attempt){
 }
 
 // Drawing: a large grid with the word list and tick boxes below it.
-function drawWordSearch(p, solution){
-  const ops = [], n = p.n, gs = Math.min(450, PW - 20), cell = gs / n, x0 = (PW - gs) / 2, y0 = 6;
+export function drawWordSearch(p: WordSearch, solution: boolean): Op[] {
+  const ops: Op[] = [], n = p.n, gs = Math.min(450, PW - 20), cell = gs / n, x0 = (PW - gs) / 2, y0 = 6;
   if(solution){
     for(const w of p.placed){
       ops.push({ k: 'line', x1: x0 + (w.x + 0.5) * cell, y1: y0 + (w.y + 0.5) * cell,
@@ -118,4 +126,3 @@ function drawWordSearch(p, solution){
   }
   return ops;
 }
-//#endregion
