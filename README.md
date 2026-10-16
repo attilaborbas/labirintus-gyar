@@ -19,7 +19,7 @@ Every page remembers its own settings in `localStorage`; only the language is sh
 The three HTML files in the repo root are generated, so edit `src/` and rebuild:
 
 ```
-python3 build.py
+node build.js
 ```
 
 | Source | Purpose |
