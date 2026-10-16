@@ -257,10 +257,6 @@ body.mode-print .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"he
 
   <section class="pick" data-t-aria="settings">
     <div>
-      <h2 class="label" data-t="worldsQ"></h2>
-      <div class="chips" id="worlds"></div>
-    </div>
-    <div>
       <h2 class="label" data-t="levelsQ"></h2>
       <div class="chips" id="levels"></div>
       <div class="custom" id="customBox" hidden>
@@ -999,11 +995,9 @@ ro: {
 };
 //#endregion
 
+// Egyetlen, fekete-fehér kinézet: fehér padló, fekete falak.
 const WORLDS = [
-  { hero:'🦔', goal:'🍎', floorA:'#E3F3CE', floorB:'#D6EBB9', wall:'#2E6B3B', speck:'#5A9B4A', thread:'rgba(255,107,61,.6)', glow:'255,226,122' },
-  { hero:'🐝', goal:'🌻', floorA:'#FFF4B8', floorB:'#FFEC94', wall:'#B86A00', speck:'#E0A800', thread:'rgba(47,91,255,.5)', glow:'255,255,255' },
-  { hero:'🐠', goal:'🐚', floorA:'#CDEEFF', floorB:'#B8E4FA', wall:'#145C94', speck:'#6FB8E0', thread:'rgba(255,107,61,.6)', glow:'255,255,255' },
-  { hero:'🚀', goal:'🌍', floorA:'#252A63', floorB:'#2C3272', wall:'#A99BFF', speck:'#FFFFFF', thread:'rgba(255,217,61,.65)', glow:'255,217,61' }
+  { hero:'🦔', goal:'🍎', floorA:'#FFFFFF', floorB:'#FFFFFF', wall:'#000000', speck:'#FFFFFF', thread:'rgba(255,107,61,.6)', glow:'255,226,122' }
 ];
 const LEVELS = [
   { n:5,  braid:0.7 },
@@ -1053,7 +1047,7 @@ function detectLang(pref){
 const KEY = 'labirintus-gyar';
 function load(){ try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e){ return {}; } }
 function persist(){
-  try { localStorage.setItem(KEY, JSON.stringify({ world:S.world, level:S.level, shape:S.shape, sound:S.sound, stars:S.totalStars, solved:S.solved, lang:S.langPref, cn:LEVELS[CUSTOM].n, cb:Math.round(LEVELS[CUSTOM].braid * 100) })); } catch(e){}
+  try { localStorage.setItem(KEY, JSON.stringify({ level:S.level, shape:S.shape, sound:S.sound, stars:S.totalStars, solved:S.solved, lang:S.langPref, cn:LEVELS[CUSTOM].n, cb:Math.round(LEVELS[CUSTOM].braid * 100) })); } catch(e){}
 }
 function clampInt(v, lo, hi, dflt){ v = parseInt(v, 10); return (v >= lo && v <= hi) ? v : dflt; }
 
@@ -1083,16 +1077,8 @@ function starSvg(on){
 function randomSeed(){ return 1000 + Math.floor(Math.random() * 9000); }
 
 /* ---------- felület ---------- */
-const worldsEl = $('worlds'), levelsEl = $('levels');
-const worldNameEls = [], levelNameEls = [];
-WORLDS.forEach((w, i) => {
-  const b = document.createElement('button');
-  b.type = 'button'; b.className = 'chip';
-  b.innerHTML = '<span class="emo" aria-hidden="true">' + w.hero + '</span><span class="nm"></span>';
-  worldNameEls.push(b.querySelector('.nm'));
-  b.addEventListener('click', () => setWorld(i));
-  worldsEl.appendChild(b);
-});
+const levelsEl = $('levels');
+const levelNameEls = [];
 const levelSzEls = [];
 LEVELS.forEach((l, i) => {
   const b = document.createElement('button');
@@ -1119,7 +1105,6 @@ makeShapeChips(pdfShapesEl, i => { P.shape = i; updateExportUI(); });
 function updateChips(){
   Array.prototype.forEach.call(shapesEl.children, (b, i) => b.setAttribute('aria-pressed', String(i === S.shape)));
   levelSzEls.forEach((el, i) => { const g = gridSize(LEVELS[i], S.shape); el.textContent = g + '×' + g; });
-  Array.prototype.forEach.call(worldsEl.children, (b, i) => b.setAttribute('aria-pressed', String(i === S.world)));
   Array.prototype.forEach.call(levelsEl.children, (b, i) => b.setAttribute('aria-pressed', String(i === S.level)));
 }
 function updateStats(){ $('steps').textContent = S.steps; $('totalStars').textContent = S.totalStars; }
@@ -1150,7 +1135,6 @@ function build(){
   S.disp = { x: S.start % S.n, y: (S.start / S.n) | 0 };
   const r2 = mulberry32(S.seed * 31 + S.n);
   S.specks = [];
-  for(let i = 0; i < S.n * S.n * 2; i++) S.specks.push([r2() * S.n, r2() * S.n, 0.015 + r2() * 0.03, 0.2 + r2() * 0.4]);
   $('win').hidden = true;
   $('customBox').hidden = !L.custom; syncCustomUI();
   $('seedIn').value = S.seed; $('seedMsg').textContent = '';
@@ -1159,7 +1143,6 @@ function build(){
   announce(t('newMazeAnn', gn, S.seed));
 }
 function canGoBigger(){ return S.level < BIGGER_MAX || (S.level === CUSTOM && LEVELS[CUSTOM].n < SIZE_MAX); }
-function setWorld(i){ S.world = i; persist(); applyWorld(); if(!$('win').hidden) fillWin(); }
 function setShape(i){ S.shape = i; persist(); S.seed = randomSeed(); build(); }
 function setLevel(i){ S.level = i; persist(); S.seed = randomSeed(); build(); }
 
@@ -1204,9 +1187,7 @@ function renderStatic(){
     if((k & 8) && (x === 0 || !inM(i - 1))){ path.moveTo(x0, y0); path.lineTo(x0, y0 + cell); }
   }
   c.lineCap = 'round'; c.lineJoin = 'round'; c.lineWidth = wallW;
-  c.save(); c.translate(0, wallW * 0.35); c.strokeStyle = 'rgba(0,0,0,.22)'; c.stroke(path); c.restore();
   c.strokeStyle = w.wall; c.stroke(path);
-  c.save(); c.translate(0, -wallW * 0.18); c.lineWidth = wallW * 0.35; c.strokeStyle = 'rgba(255,255,255,.28)'; c.stroke(path); c.restore();
 }
 
 function emoji(ch, x, y, size){
@@ -1643,7 +1624,6 @@ function applyI18n(){
   document.documentElement.lang = LANG;
   document.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.dataset.t); });
   document.querySelectorAll('[data-t-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.tAria)); });
-  worldNameEls.forEach((el, i) => { el.textContent = t('worlds')[i].name; });
   levelNameEls.forEach((el, i) => { el.textContent = levelName(i); });
   shapeNameEls.forEach((el, i) => { el.textContent = t('shapes')[i % 5]; });
   updateChips();
@@ -1661,7 +1641,7 @@ langSel.addEventListener('change', e => {
 
 /* ---------- indulás ---------- */
 const saved = load();
-S.world = clampInt(saved.world, 0, WORLDS.length - 1, 0);
+S.world = 0;
 S.level = clampInt(saved.level, 0, LEVELS.length - 1, 1);
 S.shape = clampInt(saved.shape, 0, 4, 0);
 P.shape = S.shape;
