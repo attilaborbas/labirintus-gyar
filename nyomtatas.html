@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Labirintus-gyár: gyerekbarát labirintusgenerátor, nyomtatható PDF-exporttal, 8 nyelven.">
+<meta name="description" content="Labirintus-gyár: gyerekbarát labirintusgenerátor és nyomtatható rejtvények, magyarul és angolul.">
 <style>:root{color-scheme:light}html,body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
 <title>Labirintus-gyár · Nyomtatás</title>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
@@ -172,6 +172,15 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-
 .note{margin:0;font-size:.92rem;line-height:1.45;color:var(--ink-soft);max-width:60ch}
 .note.err{color:var(--bad);font-weight:800}
 
+/* oldalak közötti menü */
+.sitenav{flex-basis:100%;order:3;display:none;flex-wrap:wrap;gap:8px}
+body.mode-play .sitenav,body.mode-print .sitenav{display:flex}
+.navlink{
+  display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:999px;text-decoration:none;
+  border:2.5px solid var(--outline);background:var(--card);color:var(--ink);box-shadow:0 3px 0 var(--edge);
+  font:800 .95rem/1 var(--font-display);
+}
+.navlink[aria-current="page"]{background:var(--sun);color:var(--on-accent);transform:translateY(2px);box-shadow:0 1px 0 var(--edge)}
 /* oldalmódok: játék (index) és tömeges nyomtatás (nyomtatas) */
 .sitelink,.backlink{display:none}
 a.btn{text-decoration:none}
@@ -241,6 +250,11 @@ body.mode-print .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"he
         <p class="quest" id="quest"></p>
       </div>
     </div>
+    <nav class="sitenav" aria-label="Menu">
+      <a class="navlink" href="index.html" data-nav="play" data-t="navPlay"></a>
+      <a class="navlink" href="nyomtatas.html" data-nav="print" data-t="navPrint"></a>
+      <a class="navlink" href="rejtvenyek.html" data-nav="puzzles" data-t="navPuzzles"></a>
+    </nav>
     <div class="tools">
       <a class="btn small backlink" href="index.html" data-t="backToGame"></a>
       <label class="icon-btn lang">
@@ -677,8 +691,7 @@ function buildPdf(jsPDF, fonts, batches, opts){
 
 //#region i18n
 const LANGS = [
-  ['hu', 'Magyar'], ['en', 'English'], ['de', 'Deutsch'], ['fr', 'Français'],
-  ['es', 'Español'], ['it', 'Italiano'], ['sk', 'Slovenčina'], ['ro', 'Română']
+  ['hu', 'Magyar'], ['en', 'English']
 ];
 const T = {
 hu: {
@@ -710,6 +723,7 @@ hu: {
   pdfFooter:'Labirintus-gyár · A labirintus számát a weboldalon beírva képernyőn is kijátszhatod.',
   cheers:['Ügyes vagy!', 'Szuper!', 'Hurrá!', 'Remek munka!'],
   levels:['Pici', 'Könnyű', 'Közepes', 'Nehéz', 'Egyéni'],
+  navPlay:'Labirintus', navPrint:'Labirintusok nyomtatása', navPuzzles:'Rejtvények',
   shapeQ:'Milyen alakú legyen?', shapes:['Négyzet', 'Kör', 'Szív', 'Csillag', 'Háromszög'],
   printOne:'Ezt a labirintust kinyomtatom', printMore:'Több labirintus nyomtatása', backToGame:'Vissza a játékhoz',
   customSize:'Méret (3–40)', customRoutes:'Extra utak (%)', customHint:'Kevesebb extra út = nehezebb labirintus. 0%-nál csak egyetlen út vezet a célba.',
@@ -749,6 +763,7 @@ en: {
   pdfFooter:'Maze Factory · Enter the maze number on the website to play it on screen too.',
   cheers:['Well done!', 'Awesome!', 'Hooray!', 'Great job!'],
   levels:['Tiny', 'Easy', 'Medium', 'Hard', 'Custom'],
+  navPlay:'Maze', navPrint:'Print mazes', navPuzzles:'Puzzles',
   shapeQ:'What shape?', shapes:['Square', 'Circle', 'Heart', 'Star', 'Triangle'],
   printOne:'Print this maze', printMore:'Print more mazes', backToGame:'Back to the game',
   customSize:'Size (3–40)', customRoutes:'Extra routes (%)', customHint:'Fewer extra routes make it harder. At 0% there is only one way to the goal.',
@@ -757,240 +772,6 @@ en: {
     { name:'Meadow', quest:'Help the bee find the sunflower!', found:'The bee found the sunflower!' },
     { name:'Sea', quest:'Help the little fish find the seashell!', found:'The little fish found the seashell!' },
     { name:'Space', quest:'Help the rocket fly home to Earth!', found:'The rocket made it home to Earth!' }
-  ]
-},
-de: {
-  language:'Sprache', brand:'Labyrinth-Fabrik', settings:'Einstellungen', worldsQ:'Wo spielen wir?', levelsQ:'Wie schwer soll es sein?',
-  stage:'Labyrinth', steps:'Schritte', stars:'Deine Sterne', mazeAria:'Labyrinth. Führe die Figur zum Ziel.',
-  winNew:'Neues Labyrinth', winBigger:'Größeres Labyrinth', newMaze:'Neues Labyrinth', hint:'Tipp', solve:'Lösung', solveHide:'Ausblenden', restart:'Neustart',
-  controls:'Steuerung', dpad:'Richtungstasten', up:'Hoch', down:'Runter', left:'Links', right:'Rechts',
-  seedLabel:'Labyrinth-Nummer', seedLoad:'Laden', seedErr:'Gib eine Zahl von 1 bis 9999 ein.',
-  seedNote:'Dieselbe Nummer und derselbe Schwierigkeitsgrad ergeben immer dasselbe Labyrinth. Schick die Nummer einem Freund und tretet gegeneinander an!',
-  howto:'Steuere mit den Pfeiltasten, den Pfeilen der Tastatur (WASD geht auch) oder zieh mit dem Finger über den Weg. Der Tipp zeigt ein paar Schritte, die Lösung den ganzen Weg.',
-  sound:'Ton',
-  printTitle:'Druckbare Labyrinthe',
-  printNote:'Wähle, wie viele Labyrinthe du von jeder Stufe möchtest, und speichere sie als PDF. Die Seiten sind schwarz-weiß im A4-Format und lassen sich gut ausdrucken.',
-  printCountsQ:'Wie viele von jeder Stufe?', printPerQ:'Wie viele Labyrinthe pro Seite?', printSol:'Lösungen am Ende',
-  printCur:'Das Labyrinth auf dem Bildschirm auch dazunehmen', printSave:'PDF speichern', printNone:'Wähle mindestens ein Labyrinth.',
-  printSum:'Labyrinthe: {0} · Seiten: {1}', less:'{0}: eins weniger', more:'{0}: eins mehr',
-  countAria:'{0}: Anzahl der Labyrinthe', perAria:'{0} pro Seite',
-  pdfMaking:'Dein PDF wird erstellt…', pdfReady:'Fertig! Bitte bestätige das Speichern.', pdfSaved:'PDF gespeichert. Viel Spaß beim Drucken!',
-  pdfDeclined:'Du hast das Speichern nicht bestätigt, deshalb wurde nichts heruntergeladen.',
-  pdfRate:'Eine Speicheranfrage ist schon offen. Bestätige oder lehne sie ab und versuche es dann erneut.',
-  pdfFail:'Das Speichern des PDFs hat nicht geklappt. Bitte versuche es erneut.',
-  pdfNoDl:'Das Speichern von PDFs ist in dieser Ansicht nicht verfügbar. Öffne die Seite auf claude.ai.',
-  pdfNoLib:'Der PDF-Ersteller wurde nicht geladen. Lade die Seite neu und versuche es erneut.',
-  stars3:'Drei Sterne! Ganz ohne Hilfe geschafft.', stars2:'Zwei Sterne. Du hast einen Tipp benutzt.', stars1:'Ein Stern. Mit der Lösung geschafft.',
-  meta:'Schritte: {0} · Kürzester Weg: {1}',
-  newMazeAnn:'Neues Labyrinth: {0}×{0}, Nummer {1}.', hintAnn:'Tipp angezeigt: Die kleinen weißen Punkte zeigen den Weg.',
-  pdfTitle:'Labyrinth-Fabrik – druckbare Labyrinthe', pdfName:'Name', pdfInstr:'Führe deinen Stift vom START zum ZIEL!',
-  pdfSolSub:'Lösungen: Die graue Linie zeigt den richtigen Weg.', pdfStart:'START', pdfGoal:'ZIEL', pdfCaption:'{0} ({1}×{1}) · Nummer: {2}',
-  pdfFooter:'Labyrinth-Fabrik · Gib die Labyrinth-Nummer auf der Webseite ein, um es auch am Bildschirm zu spielen.',
-  cheers:['Super gemacht!', 'Toll!', 'Hurra!', 'Prima Arbeit!'],
-  levels:['Winzig', 'Leicht', 'Mittel', 'Schwer', 'Eigene'],
-  shapeQ:'Welche Form?', shapes:['Quadrat', 'Kreis', 'Herz', 'Stern', 'Dreieck'],
-  printOne:'Dieses Labyrinth drucken', printMore:'Mehr Labyrinthe drucken', backToGame:'Zurück zum Spiel',
-  customSize:'Größe (3–40)', customRoutes:'Zusatzwege (%)', customHint:'Weniger Zusatzwege machen es schwerer. Bei 0 % gibt es nur einen Weg zum Ziel.',
-  worlds:[
-    { name:'Wald', quest:'Hilf dem Igel, den Apfel zu finden!', found:'Der Igel hat den Apfel gefunden!' },
-    { name:'Wiese', quest:'Hilf der Biene, die Sonnenblume zu finden!', found:'Die Biene hat die Sonnenblume gefunden!' },
-    { name:'Meer', quest:'Hilf dem Fischchen, die Muschel zu finden!', found:'Das Fischchen hat die Muschel gefunden!' },
-    { name:'Weltraum', quest:'Hilf der Rakete, zurück zur Erde zu fliegen!', found:'Die Rakete ist zurück auf der Erde!' }
-  ]
-},
-fr: {
-  language:'Langue', brand:'Usine à labyrinthes', settings:'Réglages', worldsQ:'Où joue-t-on ?', levelsQ:'Quelle difficulté ?',
-  stage:'Labyrinthe', steps:'Pas', stars:'Tes étoiles', mazeAria:'Labyrinthe. Guide le personnage jusqu’au but.',
-  winNew:'Nouveau labyrinthe', winBigger:'Labyrinthe plus grand', newMaze:'Nouveau labyrinthe', hint:'Indice', solve:'Solution', solveHide:'Cacher', restart:'Recommencer',
-  controls:'Commandes', dpad:'Boutons de direction', up:'Haut', down:'Bas', left:'Gauche', right:'Droite',
-  seedLabel:'Numéro du labyrinthe', seedLoad:'Charger', seedErr:'Saisis un nombre de 1 à 9999.',
-  seedNote:'Le même numéro et la même difficulté donnent toujours le même labyrinthe. Envoie le numéro à un ami et faites la course !',
-  howto:'Dirige avec les boutons fléchés, les flèches du clavier (WASD marche aussi) ou fais glisser ton doigt le long du chemin. L’indice montre quelques pas, la solution tout le chemin.',
-  sound:'Son',
-  printTitle:'Labyrinthes à imprimer',
-  printNote:'Choisis combien de labyrinthes tu veux de chaque niveau et enregistre-les en PDF. Les pages sont en noir et blanc, au format A4, et s’impriment très bien.',
-  printCountsQ:'Combien de chaque ?', printPerQ:'Combien de labyrinthes par page ?', printSol:'Solutions à la fin',
-  printCur:'Ajouter le labyrinthe affiché à l’écran', printSave:'Enregistrer le PDF', printNone:'Choisis au moins un labyrinthe.',
-  printSum:'Labyrinthes : {0} · Pages : {1}', less:'{0} : un de moins', more:'{0} : un de plus',
-  countAria:'{0} : nombre de labyrinthes', perAria:'{0} par page',
-  pdfMaking:'Création du PDF…', pdfReady:'Terminé ! Confirme l’enregistrement.', pdfSaved:'PDF enregistré. Bonne impression !',
-  pdfDeclined:'Tu n’as pas confirmé l’enregistrement, rien n’a été téléchargé.',
-  pdfRate:'Une demande d’enregistrement est déjà ouverte. Confirme-la ou annule-la, puis réessaie.',
-  pdfFail:'L’enregistrement du PDF a échoué. Réessaie.',
-  pdfNoDl:'L’enregistrement de PDF n’est pas disponible dans cette vue. Ouvre la page sur claude.ai.',
-  pdfNoLib:'Le générateur de PDF ne s’est pas chargé. Actualise la page et réessaie.',
-  stars3:'Trois étoiles ! Réussi sans aide.', stars2:'Deux étoiles. Tu as utilisé un indice.', stars1:'Une étoile. Réussi avec la solution.',
-  meta:'Pas : {0} · Chemin le plus court : {1}',
-  newMazeAnn:'Nouveau labyrinthe : {0}×{0}, numéro {1}.', hintAnn:'Indice affiché : les petits points blancs montrent le chemin.',
-  pdfTitle:'Usine à labyrinthes – labyrinthes à imprimer', pdfName:'Nom', pdfInstr:'Conduis ton crayon du DÉPART à l’ARRIVÉE !',
-  pdfSolSub:'Solutions : la ligne grise montre le bon chemin.', pdfStart:'DÉPART', pdfGoal:'ARRIVÉE', pdfCaption:'{0} ({1}×{1}) · numéro : {2}',
-  pdfFooter:'Usine à labyrinthes · Saisis le numéro du labyrinthe sur le site pour y jouer aussi à l’écran.',
-  cheers:['Bravo !', 'Super !', 'Hourra !', 'Beau travail !'],
-  levels:['Mini', 'Facile', 'Moyen', 'Difficile', 'Personnalisé'],
-  shapeQ:'Quelle forme ?', shapes:['Carré', 'Cercle', 'Cœur', 'Étoile', 'Triangle'],
-  printOne:'Imprimer ce labyrinthe', printMore:'Imprimer plus de labyrinthes', backToGame:'Retour au jeu',
-  customSize:'Taille (3–40)', customRoutes:'Chemins en plus (%)', customHint:'Moins il y a de chemins en plus, plus c’est difficile. À 0 %, il n’y a qu’un seul chemin vers le but.',
-  worlds:[
-    { name:'Forêt', quest:'Aide le hérisson à trouver la pomme !', found:'Le hérisson a trouvé la pomme !' },
-    { name:'Prairie', quest:'Aide l’abeille à trouver le tournesol !', found:'L’abeille a trouvé le tournesol !' },
-    { name:'Mer', quest:'Aide le petit poisson à trouver le coquillage !', found:'Le petit poisson a trouvé le coquillage !' },
-    { name:'Espace', quest:'Aide la fusée à rentrer sur Terre !', found:'La fusée est rentrée sur Terre !' }
-  ]
-},
-es: {
-  language:'Idioma', brand:'Fábrica de laberintos', settings:'Ajustes', worldsQ:'¿Dónde jugamos?', levelsQ:'¿Qué dificultad quieres?',
-  stage:'Laberinto', steps:'Pasos', stars:'Tus estrellas', mazeAria:'Laberinto. Guía al personaje hasta la meta.',
-  winNew:'Nuevo laberinto', winBigger:'Laberinto más grande', newMaze:'Nuevo laberinto', hint:'Pista', solve:'Solución', solveHide:'Ocultar', restart:'Reiniciar',
-  controls:'Controles', dpad:'Botones de dirección', up:'Arriba', down:'Abajo', left:'Izquierda', right:'Derecha',
-  seedLabel:'Número del laberinto', seedLoad:'Cargar', seedErr:'Escribe un número del 1 al 9999.',
-  seedNote:'El mismo número y la misma dificultad dan siempre el mismo laberinto. ¡Envía el número a un amigo y compitan!',
-  howto:'Maneja con los botones de flecha, las flechas del teclado (también sirven WASD) o arrastra el dedo por el camino. La pista muestra unos pasos y la solución todo el camino.',
-  sound:'Sonido',
-  printTitle:'Laberintos para imprimir',
-  printNote:'Elige cuántos laberintos quieres de cada nivel y guárdalos en PDF. Las páginas son en blanco y negro, tamaño A4, y se imprimen muy bien.',
-  printCountsQ:'¿Cuántos de cada uno?', printPerQ:'¿Cuántos laberintos por página?', printSol:'Soluciones al final',
-  printCur:'Incluir el laberinto de la pantalla', printSave:'Guardar PDF', printNone:'Elige al menos un laberinto.',
-  printSum:'Laberintos: {0} · Páginas: {1}', less:'{0}: uno menos', more:'{0}: uno más',
-  countAria:'{0}: número de laberintos', perAria:'{0} por página',
-  pdfMaking:'Creando el PDF…', pdfReady:'¡Listo! Confirma el guardado.', pdfSaved:'PDF guardado. ¡Feliz impresión!',
-  pdfDeclined:'No confirmaste el guardado, así que no se descargó nada.',
-  pdfRate:'Ya hay una solicitud de guardado abierta. Confírmala o cancélala y vuelve a intentarlo.',
-  pdfFail:'No se pudo guardar el PDF. Inténtalo de nuevo.',
-  pdfNoDl:'Guardar PDF no está disponible en esta vista. Abre la página en claude.ai.',
-  pdfNoLib:'No se cargó el generador de PDF. Actualiza la página y vuelve a intentarlo.',
-  stars3:'¡Tres estrellas! Lo lograste sin ayuda.', stars2:'Dos estrellas. Usaste una pista.', stars1:'Una estrella. Lo lograste con la solución.',
-  meta:'Pasos: {0} · Camino más corto: {1}',
-  newMazeAnn:'Nuevo laberinto: {0}×{0}, número {1}.', hintAnn:'Pista mostrada: los puntitos blancos señalan el camino.',
-  pdfTitle:'Fábrica de laberintos – laberintos para imprimir', pdfName:'Nombre', pdfInstr:'¡Lleva tu lápiz desde la SALIDA hasta la META!',
-  pdfSolSub:'Soluciones: la línea gris muestra el camino correcto.', pdfStart:'SALIDA', pdfGoal:'META', pdfCaption:'{0} ({1}×{1}) · número: {2}',
-  pdfFooter:'Fábrica de laberintos · Escribe el número del laberinto en la web para jugarlo también en pantalla.',
-  cheers:['¡Muy bien!', '¡Genial!', '¡Hurra!', '¡Buen trabajo!'],
-  levels:['Mini', 'Fácil', 'Medio', 'Difícil', 'Personalizado'],
-  shapeQ:'¿Qué forma?', shapes:['Cuadrado', 'Círculo', 'Corazón', 'Estrella', 'Triángulo'],
-  printOne:'Imprimir este laberinto', printMore:'Imprimir más laberintos', backToGame:'Volver al juego',
-  customSize:'Tamaño (3–40)', customRoutes:'Rutas extra (%)', customHint:'Menos rutas extra hacen el laberinto más difícil. Con 0 % solo hay un camino hasta la meta.',
-  worlds:[
-    { name:'Bosque', quest:'¡Ayuda al erizo a encontrar la manzana!', found:'¡El erizo encontró la manzana!' },
-    { name:'Prado', quest:'¡Ayuda a la abeja a encontrar el girasol!', found:'¡La abeja encontró el girasol!' },
-    { name:'Mar', quest:'¡Ayuda al pececito a encontrar la concha!', found:'¡El pececito encontró la concha!' },
-    { name:'Espacio', quest:'¡Ayuda al cohete a volver a la Tierra!', found:'¡El cohete volvió a la Tierra!' }
-  ]
-},
-it: {
-  language:'Lingua', brand:'Fabbrica dei labirinti', settings:'Impostazioni', worldsQ:'Dove giochiamo?', levelsQ:'Quanto difficile?',
-  stage:'Labirinto', steps:'Passi', stars:'Le tue stelle', mazeAria:'Labirinto. Guida il personaggio fino al traguardo.',
-  winNew:'Nuovo labirinto', winBigger:'Labirinto più grande', newMaze:'Nuovo labirinto', hint:'Aiuto', solve:'Soluzione', solveHide:'Nascondi', restart:'Ricomincia',
-  controls:'Comandi', dpad:'Pulsanti di direzione', up:'Su', down:'Giù', left:'Sinistra', right:'Destra',
-  seedLabel:'Numero del labirinto', seedLoad:'Carica', seedErr:'Inserisci un numero da 1 a 9999.',
-  seedNote:'Lo stesso numero e la stessa difficoltà danno sempre lo stesso labirinto. Manda il numero a un amico e sfidatevi!',
-  howto:'Guida con i pulsanti freccia, con le frecce della tastiera (va bene anche WASD) oppure trascina il dito lungo il percorso. L’aiuto mostra qualche passo, la soluzione tutto il percorso.',
-  sound:'Suono',
-  printTitle:'Labirinti da stampare',
-  printNote:'Scegli quanti labirinti vuoi per ogni livello e salvali in PDF. Le pagine sono in bianco e nero, formato A4, e si stampano benissimo.',
-  printCountsQ:'Quanti per livello?', printPerQ:'Quanti labirinti per pagina?', printSol:'Soluzioni alla fine',
-  printCur:'Includi il labirinto sullo schermo', printSave:'Salva PDF', printNone:'Scegli almeno un labirinto.',
-  printSum:'Labirinti: {0} · Pagine: {1}', less:'{0}: uno in meno', more:'{0}: uno in più',
-  countAria:'{0}: numero di labirinti', perAria:'{0} per pagina',
-  pdfMaking:'Sto creando il PDF…', pdfReady:'Fatto! Conferma il salvataggio.', pdfSaved:'PDF salvato. Buona stampa!',
-  pdfDeclined:'Non hai confermato il salvataggio, quindi non è stato scaricato nulla.',
-  pdfRate:'C’è già una richiesta di salvataggio aperta. Confermala o annullala, poi riprova.',
-  pdfFail:'Non è stato possibile salvare il PDF. Riprova.',
-  pdfNoDl:'Il salvataggio di PDF non è disponibile in questa vista. Apri la pagina su claude.ai.',
-  pdfNoLib:'Il generatore di PDF non si è caricato. Aggiorna la pagina e riprova.',
-  stars3:'Tre stelle! Ce l’hai fatta senza aiuto.', stars2:'Due stelle. Hai usato un aiuto.', stars1:'Una stella. Ce l’hai fatta con la soluzione.',
-  meta:'Passi: {0} · Percorso più breve: {1}',
-  newMazeAnn:'Nuovo labirinto: {0}×{0}, numero {1}.', hintAnn:'Aiuto mostrato: i puntini bianchi indicano la strada.',
-  pdfTitle:'Fabbrica dei labirinti – labirinti da stampare', pdfName:'Nome', pdfInstr:'Porta la matita dalla PARTENZA all’ARRIVO!',
-  pdfSolSub:'Soluzioni: la linea grigia mostra il percorso giusto.', pdfStart:'PARTENZA', pdfGoal:'ARRIVO', pdfCaption:'{0} ({1}×{1}) · numero: {2}',
-  pdfFooter:'Fabbrica dei labirinti · Inserisci il numero del labirinto sul sito per giocarlo anche sullo schermo.',
-  cheers:['Bravo!', 'Fantastico!', 'Evviva!', 'Ottimo lavoro!'],
-  levels:['Mini', 'Facile', 'Medio', 'Difficile', 'Personalizzato'],
-  shapeQ:'Che forma?', shapes:['Quadrato', 'Cerchio', 'Cuore', 'Stella', 'Triangolo'],
-  printOne:'Stampa questo labirinto', printMore:'Stampa più labirinti', backToGame:'Torna al gioco',
-  customSize:'Dimensione (3–40)', customRoutes:'Percorsi extra (%)', customHint:'Meno percorsi extra rendono il labirinto più difficile. Con lo 0 % c’è un solo percorso verso il traguardo.',
-  worlds:[
-    { name:'Bosco', quest:'Aiuta il riccio a trovare la mela!', found:'Il riccio ha trovato la mela!' },
-    { name:'Prato', quest:'Aiuta l’ape a trovare il girasole!', found:'L’ape ha trovato il girasole!' },
-    { name:'Mare', quest:'Aiuta il pesciolino a trovare la conchiglia!', found:'Il pesciolino ha trovato la conchiglia!' },
-    { name:'Spazio', quest:'Aiuta il razzo a tornare sulla Terra!', found:'Il razzo è tornato sulla Terra!' }
-  ]
-},
-sk: {
-  language:'Jazyk', brand:'Továreň na bludiská', settings:'Nastavenia', worldsQ:'Kde sa budeme hrať?', levelsQ:'Aké ťažké to má byť?',
-  stage:'Bludisko', steps:'Kroky', stars:'Tvoje hviezdičky', mazeAria:'Bludisko. Veď postavičku do cieľa.',
-  winNew:'Nové bludisko', winBigger:'Väčšie bludisko', newMaze:'Nové bludisko', hint:'Tip', solve:'Riešenie', solveHide:'Skryť', restart:'Odznova',
-  controls:'Ovládanie', dpad:'Tlačidlá smeru', up:'Hore', down:'Dole', left:'Doľava', right:'Doprava',
-  seedLabel:'Číslo bludiska', seedLoad:'Načítať', seedErr:'Zadaj číslo od 1 do 9999.',
-  seedNote:'Rovnaké číslo a rovnaká obťažnosť vždy dajú rovnaké bludisko. Pošli číslo kamarátovi a súťažte!',
-  howto:'Veď postavičku šípkami na obrazovke, šípkami na klávesnici (funguje aj WASD) alebo ťahaním prsta po ceste. Tip ukáže pár krokov, riešenie celú cestu.',
-  sound:'Zvuk',
-  printTitle:'Bludiská na tlač',
-  printNote:'Vyber, koľko bludísk chceš z každej úrovne, a ulož ich do PDF. Strany sú čiernobiele, formát A4, a po vytlačení vyzerajú skvele.',
-  printCountsQ:'Koľko z každej úrovne?', printPerQ:'Koľko bludísk na stranu?', printSol:'Riešenia na konci',
-  printCur:'Pridať aj bludisko z obrazovky', printSave:'Uložiť PDF', printNone:'Vyber aspoň jedno bludisko.',
-  printSum:'Bludiská: {0} · Strany: {1}', less:'{0}: o jedno menej', more:'{0}: o jedno viac',
-  countAria:'{0}: počet bludísk', perAria:'{0} na stranu',
-  pdfMaking:'Pripravuje sa PDF…', pdfReady:'Hotovo! Potvrď uloženie.', pdfSaved:'PDF je uložené. Príjemnú tlač!',
-  pdfDeclined:'Uloženie nebolo potvrdené, preto sa nič nestiahlo.',
-  pdfRate:'Žiadosť o uloženie je už otvorená. Potvrď ju alebo zruš a skús znova.',
-  pdfFail:'PDF sa nepodarilo uložiť. Skús to znova.',
-  pdfNoDl:'Ukladanie PDF nie je v tomto zobrazení dostupné. Otvor stránku na claude.ai.',
-  pdfNoLib:'Nástroj na tvorbu PDF sa nenačítal. Obnov stránku a skús znova.',
-  stars3:'Tri hviezdičky! Podarilo sa to bez pomoci.', stars2:'Dve hviezdičky. Pomohol tip.', stars1:'Jedna hviezdička. Podarilo sa to s riešením.',
-  meta:'Kroky: {0} · Najkratšia cesta: {1}',
-  newMazeAnn:'Nové bludisko: {0}×{0}, číslo {1}.', hintAnn:'Tip zobrazený: malé biele bodky ukazujú cestu.',
-  pdfTitle:'Továreň na bludiská – bludiská na tlač', pdfName:'Meno', pdfInstr:'Veď ceruzku od ŠTARTU do CIEĽA!',
-  pdfSolSub:'Riešenia: sivá čiara ukazuje správnu cestu.', pdfStart:'ŠTART', pdfGoal:'CIEĽ', pdfCaption:'{0} ({1}×{1}) · číslo: {2}',
-  pdfFooter:'Továreň na bludiská · Zadaj číslo bludiska na webe a môžeš ho hrať aj na obrazovke.',
-  cheers:['Výborne!', 'Super!', 'Hurá!', 'Skvelá práca!'],
-  levels:['Mini', 'Ľahké', 'Stredné', 'Ťažké', 'Vlastné'],
-  shapeQ:'Aký tvar?', shapes:['Štvorec', 'Kruh', 'Srdce', 'Hviezda', 'Trojuholník'],
-  printOne:'Vytlačiť toto bludisko', printMore:'Tlačiť viac bludísk', backToGame:'Späť do hry',
-  customSize:'Veľkosť (3–40)', customRoutes:'Extra cesty (%)', customHint:'Čím menej extra ciest, tým je bludisko ťažšie. Pri 0 % vedie do cieľa len jedna cesta.',
-  worlds:[
-    { name:'Les', quest:'Pomôž ježkovi nájsť jablko!', found:'Ježko našiel jablko!' },
-    { name:'Lúka', quest:'Pomôž včielke nájsť slnečnicu!', found:'Včielka našla slnečnicu!' },
-    { name:'More', quest:'Pomôž rybičke nájsť mušľu!', found:'Rybička našla mušľu!' },
-    { name:'Vesmír', quest:'Pomôž raketie vrátiť sa na Zem!', found:'Raketa sa vrátila na Zem!' }
-  ]
-},
-ro: {
-  language:'Limbă', brand:'Fabrica de labirinturi', settings:'Setări', worldsQ:'Unde ne jucăm?', levelsQ:'Cât de greu să fie?',
-  stage:'Labirint', steps:'Pași', stars:'Stelele tale', mazeAria:'Labirint. Condu personajul până la țintă.',
-  winNew:'Labirint nou', winBigger:'Labirint mai mare', newMaze:'Labirint nou', hint:'Indiciu', solve:'Soluție', solveHide:'Ascunde', restart:'De la capăt',
-  controls:'Comenzi', dpad:'Butoane de direcție', up:'Sus', down:'Jos', left:'Stânga', right:'Dreapta',
-  seedLabel:'Numărul labirintului', seedLoad:'Încarcă', seedErr:'Scrie un număr de la 1 la 9999.',
-  seedNote:'Același număr și aceeași dificultate dau mereu același labirint. Trimite numărul unui prieten și întrecește-te cu el!',
-  howto:'Condu cu butoanele-săgeți, cu săgețile de la tastatură (merge și WASD) sau trage degetul pe drum. Indiciul arată câțiva pași, soluția arată tot drumul.',
-  sound:'Sunet',
-  printTitle:'Labirinturi de printat',
-  printNote:'Alege câte labirinturi vrei din fiecare nivel și salvează-le în PDF. Paginile sunt alb-negru, format A4, și arată bine la imprimare.',
-  printCountsQ:'Câte din fiecare?', printPerQ:'Câte labirinturi pe pagină?', printSol:'Soluțiile la sfârșit',
-  printCur:'Include și labirintul de pe ecran', printSave:'Salvează PDF', printNone:'Alege cel puțin un labirint.',
-  printSum:'Labirinturi: {0} · Pagini: {1}', less:'{0}: unul mai puțin', more:'{0}: unul în plus',
-  countAria:'{0}: numărul de labirinturi', perAria:'{0} pe pagină',
-  pdfMaking:'Se creează PDF-ul…', pdfReady:'Gata! Confirmă salvarea.', pdfSaved:'PDF salvat. Imprimare plăcută!',
-  pdfDeclined:'Nu ai confirmat salvarea, deci nu s-a descărcat nimic.',
-  pdfRate:'O cerere de salvare este deja deschisă. Confirm-o sau anuleaz-o, apoi încearcă din nou.',
-  pdfFail:'Salvarea PDF-ului nu a reușit. Încearcă din nou.',
-  pdfNoDl:'Salvarea PDF-urilor nu este disponibilă în această vizualizare. Deschide pagina pe claude.ai.',
-  pdfNoLib:'Generatorul de PDF nu s-a încărcat. Reîncarcă pagina și încearcă din nou.',
-  stars3:'Trei stele! Ai reușit fără ajutor.', stars2:'Două stele. Ai folosit un indiciu.', stars1:'O stea. Ai reușit cu soluția.',
-  meta:'Pași: {0} · Cel mai scurt drum: {1}',
-  newMazeAnn:'Labirint nou: {0}×{0}, numărul {1}.', hintAnn:'Indiciu afișat: punctele albe mici arată drumul.',
-  pdfTitle:'Fabrica de labirinturi – labirinturi de printat', pdfName:'Nume', pdfInstr:'Du creionul de la START la FINAL!',
-  pdfSolSub:'Soluții: linia gri arată drumul corect.', pdfStart:'START', pdfGoal:'FINAL', pdfCaption:'{0} ({1}×{1}) · numărul: {2}',
-  pdfFooter:'Fabrica de labirinturi · Scrie numărul labirintului pe site ca să îl joci și pe ecran.',
-  cheers:['Bravo!', 'Super!', 'Ura!', 'Treabă excelentă!'],
-  levels:['Mini', 'Ușor', 'Mediu', 'Greu', 'Personalizat'],
-  shapeQ:'Ce formă?', shapes:['Pătrat', 'Cerc', 'Inimă', 'Stea', 'Triunghi'],
-  printOne:'Printează acest labirint', printMore:'Printează mai multe labirinturi', backToGame:'Înapoi la joc',
-  customSize:'Dimensiune (3–40)', customRoutes:'Drumuri în plus (%)', customHint:'Cu cât sunt mai puține drumuri în plus, cu atât labirintul e mai greu. La 0 % există un singur drum spre țintă.',
-  worlds:[
-    { name:'Pădure', quest:'Ajută ariciul să găsească mărul!', found:'Ariciul a găsit mărul!' },
-    { name:'Pajiște', quest:'Ajută albinuța să găsească floarea-soarelui!', found:'Albinuța a găsit floarea-soarelui!' },
-    { name:'Mare', quest:'Ajută peștișorul să găsească scoica!', found:'Peștișorul a găsit scoica!' },
-    { name:'Spațiu', quest:'Ajută racheta să se întoarcă pe Pământ!', found:'Racheta s-a întors pe Pământ!' }
   ]
 }
 };
@@ -1638,6 +1419,7 @@ function applyI18n(){
   shapeNameEls.forEach((el, i) => { el.textContent = t('shapes')[i % 5]; });
   updateChips();
   if(document.body.classList.contains('mode-print')) document.title = t('brand') + ' · ' + t('printTitle');
+  document.querySelectorAll('.navlink').forEach(a => { if(a.dataset.nav === MODE) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   langSel.value = LANG; $('langCode').textContent = LANG.toUpperCase();
   $('quest').textContent = t('worlds')[S.world].quest;
   updateSolveBtn(); updateExportUI();
