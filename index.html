@@ -172,6 +172,17 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-
 .note{margin:0;font-size:.92rem;line-height:1.45;color:var(--ink-soft);max-width:60ch}
 .note.err{color:var(--bad);font-weight:800}
 
+/* oldalmódok: játék (index) és tömeges nyomtatás (nyomtatas) */
+.sitelink,.backlink{display:none}
+a.btn{text-decoration:none}
+.printone{grid-column:1/-1}
+body.mode-play .print{display:none}
+body.mode-play .sitelink{display:inline-flex}
+body.mode-print .pick,body.mode-print .stagecol,body.mode-print .play,body.mode-print .extra,
+body.mode-print .quest,body.mode-print #soundBtn,body.mode-print .opt-cur{display:none}
+body.mode-print .backlink{display:inline-flex}
+body.mode-print .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "print";grid-template-rows:auto}
+
 /* PDF export */
 .print{
   grid-area:print;display:grid;gap:14px;padding:18px 16px 20px;
@@ -219,7 +230,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-
 }
 </style>
 </head>
-<body>
+<body class="mode-play">
 
 <div class="app">
   <header class="head">
@@ -231,6 +242,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-
       </div>
     </div>
     <div class="tools">
+      <a class="btn small backlink" href="index.html" data-t="backToGame"></a>
       <label class="icon-btn lang">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
         <span id="langCode" aria-hidden="true"></span>
@@ -310,6 +322,11 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg>
         <span data-t="restart"></span>
       </button>
+      <button class="btn printone" id="printOne" type="button">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>
+        <span data-t="printOne"></span>
+      </button>
+      <p class="note printone" id="oneMsg" role="status"></p>
     </div>
     <div class="dpad" role="group" data-t-aria="dpad">
       <button class="btn dp" type="button" data-dir="0" data-t-aria="up"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6M6 12l6-6 6 6"/></svg></button>
@@ -328,6 +345,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-
     <p class="note err" id="seedMsg" role="status"></p>
     <p class="note" data-t="seedNote"></p>
     <p class="note" data-t="howto"></p>
+    <a class="btn sitelink" id="moreLink" href="nyomtatas.html" data-t="printMore"></a>
   </section>
 
   <section class="print" aria-labelledby="printTitle">
@@ -348,7 +366,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-
           <div class="chips c3" id="perChips"></div>
         </div>
         <label class="check" for="optSol"><input type="checkbox" id="optSol" checked><span data-t="printSol"></span></label>
-        <label class="check" for="optCur"><input type="checkbox" id="optCur"><span data-t="printCur"></span></label>
+        <label class="check opt-cur" for="optCur"><input type="checkbox" id="optCur"><span data-t="printCur"></span></label>
         <p class="sum" id="pdfSum"></p>
         <button class="btn primary" id="pdfBtn" type="button">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
@@ -696,6 +714,7 @@ hu: {
   cheers:['Ügyes vagy!', 'Szuper!', 'Hurrá!', 'Remek munka!'],
   levels:['Pici', 'Könnyű', 'Közepes', 'Nehéz', 'Egyéni'],
   shapeQ:'Milyen alakú legyen?', shapes:['Négyzet', 'Kör', 'Szív', 'Csillag', 'Háromszög'],
+  printOne:'Ezt a labirintust kinyomtatom', printMore:'Több labirintus nyomtatása', backToGame:'Vissza a játékhoz',
   customSize:'Méret (3–40)', customRoutes:'Extra utak (%)', customHint:'Kevesebb extra út = nehezebb labirintus. 0%-nál csak egyetlen út vezet a célba.',
   worlds:[
     { name:'Erdő', quest:'Segíts a sünnek megtalálni az almát!', found:'A süni megtalálta az almát!' },
@@ -734,6 +753,7 @@ en: {
   cheers:['Well done!', 'Awesome!', 'Hooray!', 'Great job!'],
   levels:['Tiny', 'Easy', 'Medium', 'Hard', 'Custom'],
   shapeQ:'What shape?', shapes:['Square', 'Circle', 'Heart', 'Star', 'Triangle'],
+  printOne:'Print this maze', printMore:'Print more mazes', backToGame:'Back to the game',
   customSize:'Size (3–40)', customRoutes:'Extra routes (%)', customHint:'Fewer extra routes make it harder. At 0% there is only one way to the goal.',
   worlds:[
     { name:'Forest', quest:'Help the hedgehog find the apple!', found:'The hedgehog found the apple!' },
@@ -772,6 +792,7 @@ de: {
   cheers:['Super gemacht!', 'Toll!', 'Hurra!', 'Prima Arbeit!'],
   levels:['Winzig', 'Leicht', 'Mittel', 'Schwer', 'Eigene'],
   shapeQ:'Welche Form?', shapes:['Quadrat', 'Kreis', 'Herz', 'Stern', 'Dreieck'],
+  printOne:'Dieses Labyrinth drucken', printMore:'Mehr Labyrinthe drucken', backToGame:'Zurück zum Spiel',
   customSize:'Größe (3–40)', customRoutes:'Zusatzwege (%)', customHint:'Weniger Zusatzwege machen es schwerer. Bei 0 % gibt es nur einen Weg zum Ziel.',
   worlds:[
     { name:'Wald', quest:'Hilf dem Igel, den Apfel zu finden!', found:'Der Igel hat den Apfel gefunden!' },
@@ -810,6 +831,7 @@ fr: {
   cheers:['Bravo !', 'Super !', 'Hourra !', 'Beau travail !'],
   levels:['Mini', 'Facile', 'Moyen', 'Difficile', 'Personnalisé'],
   shapeQ:'Quelle forme ?', shapes:['Carré', 'Cercle', 'Cœur', 'Étoile', 'Triangle'],
+  printOne:'Imprimer ce labyrinthe', printMore:'Imprimer plus de labyrinthes', backToGame:'Retour au jeu',
   customSize:'Taille (3–40)', customRoutes:'Chemins en plus (%)', customHint:'Moins il y a de chemins en plus, plus c’est difficile. À 0 %, il n’y a qu’un seul chemin vers le but.',
   worlds:[
     { name:'Forêt', quest:'Aide le hérisson à trouver la pomme !', found:'Le hérisson a trouvé la pomme !' },
@@ -848,6 +870,7 @@ es: {
   cheers:['¡Muy bien!', '¡Genial!', '¡Hurra!', '¡Buen trabajo!'],
   levels:['Mini', 'Fácil', 'Medio', 'Difícil', 'Personalizado'],
   shapeQ:'¿Qué forma?', shapes:['Cuadrado', 'Círculo', 'Corazón', 'Estrella', 'Triángulo'],
+  printOne:'Imprimir este laberinto', printMore:'Imprimir más laberintos', backToGame:'Volver al juego',
   customSize:'Tamaño (3–40)', customRoutes:'Rutas extra (%)', customHint:'Menos rutas extra hacen el laberinto más difícil. Con 0 % solo hay un camino hasta la meta.',
   worlds:[
     { name:'Bosque', quest:'¡Ayuda al erizo a encontrar la manzana!', found:'¡El erizo encontró la manzana!' },
@@ -886,6 +909,7 @@ it: {
   cheers:['Bravo!', 'Fantastico!', 'Evviva!', 'Ottimo lavoro!'],
   levels:['Mini', 'Facile', 'Medio', 'Difficile', 'Personalizzato'],
   shapeQ:'Che forma?', shapes:['Quadrato', 'Cerchio', 'Cuore', 'Stella', 'Triangolo'],
+  printOne:'Stampa questo labirinto', printMore:'Stampa più labirinti', backToGame:'Torna al gioco',
   customSize:'Dimensione (3–40)', customRoutes:'Percorsi extra (%)', customHint:'Meno percorsi extra rendono il labirinto più difficile. Con lo 0 % c’è un solo percorso verso il traguardo.',
   worlds:[
     { name:'Bosco', quest:'Aiuta il riccio a trovare la mela!', found:'Il riccio ha trovato la mela!' },
@@ -924,6 +948,7 @@ sk: {
   cheers:['Výborne!', 'Super!', 'Hurá!', 'Skvelá práca!'],
   levels:['Mini', 'Ľahké', 'Stredné', 'Ťažké', 'Vlastné'],
   shapeQ:'Aký tvar?', shapes:['Štvorec', 'Kruh', 'Srdce', 'Hviezda', 'Trojuholník'],
+  printOne:'Vytlačiť toto bludisko', printMore:'Tlačiť viac bludísk', backToGame:'Späť do hry',
   customSize:'Veľkosť (3–40)', customRoutes:'Extra cesty (%)', customHint:'Čím menej extra ciest, tým je bludisko ťažšie. Pri 0 % vedie do cieľa len jedna cesta.',
   worlds:[
     { name:'Les', quest:'Pomôž ježkovi nájsť jablko!', found:'Ježko našiel jablko!' },
@@ -962,6 +987,7 @@ ro: {
   cheers:['Bravo!', 'Super!', 'Ura!', 'Treabă excelentă!'],
   levels:['Mini', 'Ușor', 'Mediu', 'Greu', 'Personalizat'],
   shapeQ:'Ce formă?', shapes:['Pătrat', 'Cerc', 'Inimă', 'Stea', 'Triunghi'],
+  printOne:'Printează acest labirint', printMore:'Printează mai multe labirinturi', backToGame:'Înapoi la joc',
   customSize:'Dimensiune (3–40)', customRoutes:'Drumuri în plus (%)', customHint:'Cu cât sunt mai puține drumuri în plus, cu atât labirintul e mai greu. La 0 % există un singur drum spre țintă.',
   worlds:[
     { name:'Pădure', quest:'Ajută ariciul să găsească mărul!', found:'Ariciul a găsit mărul!' },
@@ -1504,7 +1530,6 @@ function pdfStrings(){
   };
 }
 
-// Önálló oldalként (claude.ai nélkül) sima böngészős letöltés.
 function blobSaver(){
   return { save: async function(r){
     const url = URL.createObjectURL(new Blob([r.data], { type: 'application/pdf' }));
@@ -1525,7 +1550,7 @@ function getDownloads(){
 let pdfMsgKey = null, pdfMsgErr = false;
 function pdfMessage(key, isErr){
   pdfMsgKey = key; pdfMsgErr = !!isErr;
-  const m = $('pdfMsg'); m.textContent = key ? t(key) : ''; m.classList.toggle('err', pdfMsgErr);
+  ['pdfMsg', 'oneMsg'].forEach(id => { const m = $(id); m.textContent = key ? t(key) : ''; m.classList.toggle('err', pdfMsgErr); });
 }
 
 $('pdfBtn').addEventListener('click', async () => {
@@ -1549,7 +1574,29 @@ $('pdfBtn').addEventListener('click', async () => {
   } finally { updateExportUI(); }
 });
 getDownloads().then(dl => {
-  if(!dl){ $('pdfBtn').hidden = true; pdfMessage('pdfNoDl', false); }
+  if(!dl){ $('pdfBtn').hidden = true; $('printOne').hidden = true; pdfMessage('pdfNoDl', false); }
+});
+$('printOne').addEventListener('click', async () => {
+  const btn = $('printOne');
+  const dl = await getDownloads();
+  if(!dl){ pdfMessage('pdfNoDl', true); return; }
+  if(!window.jspdf){ pdfMessage('pdfNoLib', true); return; }
+  btn.disabled = true; pdfMessage('pdfMaking', false);
+  await new Promise(r => setTimeout(r, 40));
+  try {
+    const L = LEVELS[S.level];
+    const batch = { name: levelName(S.level) + (S.shape ? ' · ' + t('shapes')[S.shape] : ''), n: S.n, shape: S.shape, braid: L.braid, custom: !!L.custom, seeds: [S.seed] };
+    const buf = buildPdf(window.jspdf.jsPDF, { reg: FONT_REG, bold: FONT_BOLD }, [batch],
+      { per: 1, solutions: true, tx: pdfStrings() });
+    pdfMessage('pdfReady', false);
+    await dl.save({ filename: 'labirintus-' + S.seed + '-' + LANG + '.pdf', data: buf });
+    pdfMessage('pdfSaved', false);
+  } catch(err){
+    const code = err && err.code;
+    if(code === 'declined') pdfMessage('pdfDeclined', false);
+    else if(code === 'rate_limited') pdfMessage('pdfRate', true);
+    else pdfMessage('pdfFail', true);
+  } finally { btn.disabled = false; }
 });
 
 /* ---------- egyéni szint ---------- */
@@ -1600,6 +1647,7 @@ function applyI18n(){
   levelNameEls.forEach((el, i) => { el.textContent = levelName(i); });
   shapeNameEls.forEach((el, i) => { el.textContent = t('shapes')[i % 5]; });
   updateChips();
+  if(document.body.classList.contains('mode-print')) document.title = t('brand') + ' · ' + t('printTitle');
   langSel.value = LANG; $('langCode').textContent = LANG.toUpperCase();
   $('quest').textContent = t('worlds')[S.world].quest;
   updateSolveBtn(); updateExportUI();
