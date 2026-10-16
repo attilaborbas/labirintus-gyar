@@ -1,0 +1,425 @@
+<title>Maze Factory · Puzzles</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/*__SHARED_CSS__*/
+/* puzzle page */
+body.mode-puzzles .sitenav{display:flex}
+.app.puz{grid-template-areas:"head" "pick" "stage" "play" "print"}
+@media (min-width:900px){
+  .app.puz{
+    grid-template-columns:minmax(0,1fr) 380px;
+    grid-template-areas:"head head" "stage pick" "stage play" "stage print";
+    grid-template-rows:auto auto auto 1fr;
+  }
+}
+.puz .stagecol{width:min(100%,600px)}
+.sheet{
+  background:#fff;border:3px solid var(--outline);border-radius:18px;box-shadow:0 6px 0 var(--edge);
+  overflow:hidden;aspect-ratio:515/660;max-width:100%;
+}
+.sheet svg{display:block;width:100%;height:100%;font-family:"Nunito","DejaVu Sans",system-ui,sans-serif}
+.chips.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.chips.c2 .chip,.chips.c3.bands .chip{min-height:64px;font-size:1.05rem}
+.chip small{font:800 .78rem/1 var(--font-body);color:var(--ink-soft)}
+.chip[aria-pressed="true"] small{color:var(--on-accent)}
+.chips.sm .chip{min-height:52px;font-size:.88rem;padding:6px 2px}
+.puz .label.gap{margin-top:14px}
+.puz .actions .wide{grid-column:1/-1}
+.puz .print{gap:12px}
+.pdf-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pdf-row .label{margin:0}
+</style>
+
+<div class="app puz">
+  <header class="head">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M6 6H34V34H11V12H28V28H17V18H23"/></svg>
+      <div>
+        <h1 data-t="brand"></h1>
+        <p class="quest" data-t="tag"></p>
+      </div>
+    </div>
+    <nav class="sitenav" aria-label="Menu">
+      <a class="navlink" href="index.html" data-nav="play" data-t="navPlay"></a>
+      <a class="navlink" href="print.html" data-nav="print" data-t="navPrint"></a>
+      <a class="navlink" href="puzzles.html" data-nav="puzzles" data-t="navPuzzles"></a>
+    </nav>
+    <div class="tools">
+      <label class="icon-btn lang">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+        <span id="langCode" aria-hidden="true"></span>
+        <select id="langSel" data-t-aria="language"></select>
+      </label>
+    </div>
+  </header>
+
+  <section class="pick" data-t-aria="settings">
+    <div>
+      <h2 class="label" data-t="typeQ"></h2>
+      <div class="chips c2" id="types"></div>
+    </div>
+    <div>
+      <h2 class="label" data-t="ageQ"></h2>
+      <div class="chips c3 bands" id="bands"></div>
+    </div>
+    <div id="optWs">
+      <h2 class="label" data-t="themeQ"></h2>
+      <div class="chips sm" id="themes"></div>
+    </div>
+    <div id="optDots">
+      <h2 class="label" data-t="shapeQ"></h2>
+      <div class="chips sm" id="dshapes"></div>
+      <h2 class="label gap" data-t="stepQ"></h2>
+      <div class="chips c5 sm" id="steps"></div>
+    </div>
+  </section>
+
+  <section class="stagecol" data-t-aria="sheetAria">
+    <div class="statbar"><span class="stat" id="cap"></span></div>
+    <div class="sheet" id="sheet" role="img" data-t-aria="sheetAria"></div>
+    <p class="sr-only" id="live" aria-live="polite"></p>
+  </section>
+
+  <section class="play" data-t-aria="controls">
+    <div class="actions">
+      <button class="btn primary" id="newBtn" type="button">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+        <span data-t="newPuz"></span>
+      </button>
+      <button class="btn wide" id="solBtn" type="button" aria-pressed="false">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span id="solLbl"></span>
+      </button>
+    </div>
+    <form class="seed" id="seedForm">
+      <label for="seedIn" data-t="seedLabel"></label>
+      <input id="seedIn" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off">
+      <button class="btn small" type="submit" data-t="seedLoad"></button>
+    </form>
+    <p class="note err" id="seedMsg" role="status"></p>
+    <p class="note" data-t="seedNote"></p>
+  </section>
+
+  <section class="print" aria-labelledby="pdfTitle">
+    <h2 class="print-title" id="pdfTitle" data-t="pdfTitle"></h2>
+    <p class="note" data-t="pdfNote"></p>
+    <div class="pdf-row">
+      <h3 class="label" data-t="countQ"></h3>
+      <div class="stepper">
+        <button class="btn step" id="cntMinus" type="button">−</button>
+        <output id="cntOut">1</output>
+        <button class="btn step" id="cntPlus" type="button">+</button>
+      </div>
+    </div>
+    <label class="check" for="optSol"><input type="checkbox" id="optSol" checked><span data-t="pdfSol"></span></label>
+    <p class="sum" id="pdfSum"></p>
+    <button class="btn primary" id="pdfBtn" type="button">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+      <span data-t="pdfSave"></span>
+    </button>
+    <p class="note" id="pdfMsg" role="status"></p>
+  </section>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+//__puzzle-core.js__
+//__puzzle-words.js__
+//__puzzle-wordsearch.js__
+//__puzzle-dots.js__
+//__puzzle-math.js__
+//__puzzle-scramble.js__
+//__puzzle-spot.js__
+
+const $ = id => document.getElementById(id);
+const MODE = 'puzzles';
+const MAX_COUNT = 12;
+
+/* ---------- texts (Hungarian and English) ---------- */
+const T = {
+hu: {
+  language:'Nyelv', brand:'Labirintus-gyár', tag:'Nyomtatható rejtvények gyerekeknek', settings:'Beállítások',
+  navPlay:'Labirintus', navPrint:'Labirintusok nyomtatása', navPuzzles:'Rejtvények',
+  typeQ:'Milyen rejtvényt szeretnél?', types:['Szókereső', 'Pontösszekötő', 'Számpiramis', 'Varázsnégyzet', 'Betűkeverő', 'Hibakereső'],
+  ageQ:'Hány éves a gyerek?', bands:['6–7 év', '8–9 év', '10–12 év'], grades:['1. osztály', '2–3. osztály', '4–6. osztály'],
+  themeQ:'Téma', themeMix:'Vegyes',
+  shapeQ:'Mi legyen belőle?', shapeAny:'Meglepetés', stepQ:'Hogyan számoljunk?', stepAuto:'Korosztály szerint', stepN:'{0}-esével',
+  newPuz:'Új rejtvény', solShow:'Megoldás', solHide:'Megoldás elrejtése', controls:'Vezérlők',
+  sheetAria:'A rejtvény', numLabel:'száma',
+  seedLabel:'Rejtvény száma', seedLoad:'Betöltés', seedErr:'Írj be egy számot 1 és 9999 között.',
+  seedNote:'Ugyanaz a szám, korosztály és beállítás mindig ugyanazt a rejtvényt adja. Küldd el a számot a barátodnak!',
+  pdfTitle:'Rejtvények PDF-ben', pdfNote:'Az első rejtvény az, amit most látsz, a többit új számokkal készítjük. A lapok fekete-fehér A4-esek.',
+  countQ:'Hány rejtvény legyen?', pdfSol:'Megoldások a végén', pdfSum:'{0} rejtvény · {1} oldal', pdfSave:'PDF mentése',
+  pdfMaking:'Készül a PDF…', pdfReady:'Kész! Ha kéri a böngésző, hagyd jóvá a mentést.', pdfSaved:'A PDF mentve. Jó nyomtatást!',
+  pdfDeclined:'A mentést nem hagytad jóvá, ezért nem történt letöltés.',
+  pdfRate:'Már nyitva van egy mentési kérés. Hagyd jóvá vagy utasítsd el, aztán próbáld újra.',
+  pdfFail:'Nem sikerült a PDF mentése. Próbáld újra.',
+  pdfNoDl:'A PDF mentése ebben a nézetben nem érhető el.', pdfNoLib:'A PDF-készítő nem töltődött be. Frissítsd az oldalt, és próbáld újra.',
+  pdfDocTitle:'Labirintus-gyár – nyomtatható rejtvények', pdfName:'Neved', pdfFooter:'Labirintus-gyár · nyomtatható rejtvények', solSub:'Megoldások: a kiemelt rész mutatja a helyes megoldást.',
+  wsInstr:['Keresd meg a felsorolt szavakat a betűk között! Jobbra és lefelé olvashatod őket. Karikázd be őket, és pipáld ki a listán.',
+           'Keresd meg a felsorolt szavakat a betűk között! Jobbra, lefelé és átlósan lefelé olvashatod őket. Karikázd be őket, és pipáld ki a listán.',
+           'Keresd meg a felsorolt szavakat a betűk között! Bármelyik irányban lehetnek, akár visszafelé is. Karikázd be őket, és pipáld ki a listán.'],
+  dotsInstr:'Kösd össze a pontokat a számok sorrendjében! Kezdd a bekarikázott ponttal, az utolsó pont után menj vissza az elsőhöz. Mi lesz belőle?',
+  scrInstr:'A betűk összekeveredtek! Találd ki, melyik szó bújt el bennük, és írd be a négyzetekbe.',
+  scrHint:' Az első betűt megmutatjuk.',
+  spotInstr:'Keresd meg a két kép közötti {0} különbséget! Karikázd be őket az alsó képen.',
+  pyrInstr:'Írd be a hiányzó számokat! Minden tégla száma a két alatta lévő tégla számának összege.',
+  magInstr:'Írd be a hiányzó számokat úgy, hogy minden sorban, oszlopban és mindkét átlóban ugyanannyi legyen az összeg! Az összeget a kis négyzet fölött látod.',
+  dotsStep:'A számok {0}-esével növekednek.', solCap:'Megoldás · {0} · {1}', liveNew:'Új rejtvény: {0}, száma: {1}.'
+},
+en: {
+  language:'Language', brand:'Maze Factory', tag:'Printable puzzles for kids', settings:'Settings',
+  navPlay:'Maze', navPrint:'Print mazes', navPuzzles:'Puzzles',
+  typeQ:'Which puzzle would you like?', types:['Word search', 'Dot to dot', 'Number pyramid', 'Magic square', 'Word scramble', 'Spot the difference'],
+  ageQ:'How old is the child?', bands:['Ages 6–7', 'Ages 8–9', 'Ages 10–12'], grades:['Grade 1', 'Grades 2–3', 'Grades 4–6'],
+  themeQ:'Theme', themeMix:'Mixed',
+  shapeQ:'What will it be?', shapeAny:'Surprise', stepQ:'How shall we count?', stepAuto:'By age', stepN:'by {0}s',
+  newPuz:'New puzzle', solShow:'Solution', solHide:'Hide solution', controls:'Controls',
+  sheetAria:'The puzzle', numLabel:'number',
+  seedLabel:'Puzzle number', seedLoad:'Load', seedErr:'Enter a number between 1 and 9999.',
+  seedNote:'The same number, age and settings always give the same puzzle. Send the number to a friend!',
+  pdfTitle:'Puzzles as PDF', pdfNote:'The first puzzle is the one you see now, the others get new numbers. The pages are black and white A4.',
+  countQ:'How many puzzles?', pdfSol:'Solutions at the end', pdfSum:'{0} puzzles · {1} pages', pdfSave:'Save PDF',
+  pdfMaking:'Making your PDF…', pdfReady:'Done! If your browser asks, confirm the save.', pdfSaved:'PDF saved. Happy printing!',
+  pdfDeclined:'You did not confirm the save, so nothing was downloaded.',
+  pdfRate:'A save request is already open. Confirm or cancel it, then try again.',
+  pdfFail:'Saving the PDF did not work. Please try again.',
+  pdfNoDl:'Saving a PDF is not available in this view.', pdfNoLib:'The PDF maker did not load. Refresh the page and try again.',
+  pdfDocTitle:'Maze Factory – printable puzzles', pdfName:'Name', pdfFooter:'Maze Factory · printable puzzles', solSub:'Solutions: the highlighted part shows the right answer.',
+  wsInstr:['Find the listed words in the letters! You can read them to the right and downwards. Circle them and tick them off the list.',
+           'Find the listed words in the letters! You can read them to the right, downwards and diagonally downwards. Circle them and tick them off the list.',
+           'Find the listed words in the letters! They can run in any direction, even backwards. Circle them and tick them off the list.'],
+  dotsInstr:'Connect the dots in number order! Start at the circled dot, and after the last dot go back to the first. What will it be?',
+  scrInstr:'The letters got mixed up! Work out which word is hiding in them and write it in the boxes.',
+  scrHint:' The first letter is shown.',
+  spotInstr:'Find the {0} differences between the two pictures! Circle them on the bottom picture.',
+  pyrInstr:'Fill in the missing numbers! Each brick is the sum of the two bricks below it.',
+  magInstr:'Fill in the missing numbers so that every row, every column and both diagonals add up to the same sum! The sum is written above each square.',
+  dotsStep:'The numbers go up by {0}s.', solCap:'Solution · {0} · {1}', liveNew:'New puzzle: {0}, number {1}.'
+}
+};
+let LANG = 'en';
+function t(key){
+  let v = T[LANG][key];
+  if(v === undefined) v = T.en[key];
+  if(typeof v === 'string' && arguments.length > 1){
+    const a = arguments;
+    v = v.replace(/\{(\d)\}/g, (m, i) => a[+i + 1]);
+  }
+  return v;
+}
+function detectLang(pref){
+  if(pref && T[pref]) return pref;
+  let list = [];
+  try { list = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language]; } catch(e){}
+  for(const l of list){
+    const p = String(l || '').toLowerCase().split('-')[0];
+    if(T[p]) return p;
+  }
+  return 'en';
+}
+
+/* ---------- state and persistence ---------- */
+const KEY = 'maze-factory-puzzles', LANG_KEY = 'maze-factory-lang';
+const ST = { type: 'ws', band: 1, theme: 'mix', shape: 'any', step: 0, count: 1, solutions: true, lang: null };
+let seed = 0, puz = null, showSol = false;
+function load(){ try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e){ return {}; } }
+function persist(){
+  try {
+    localStorage.setItem(KEY, JSON.stringify(ST));
+    if(ST.lang) localStorage.setItem(LANG_KEY, ST.lang);
+  } catch(e){}
+}
+function readLangPref(){ try { const v = localStorage.getItem(LANG_KEY); return (v && T[v]) ? v : null; } catch(e){ return null; } }
+function clampInt(v, lo, hi, d){ v = parseInt(v, 10); return (v >= lo && v <= hi) ? v : d; }
+function randomSeed(){ return 1 + Math.floor(Math.random() * 9999); }
+
+/* ---------- generating and drawing the puzzle ---------- */
+const TYPE_IDS = ['ws', 'dots', 'pyr', 'magic', 'scr', 'spot'];
+const TYPE_FILE = { ws: 'word-search', dots: 'dot-to-dot', pyr: 'number-pyramid', magic: 'magic-square', scr: 'word-scramble', spot: 'spot-the-difference' };
+function makePuzzle(type, sd){
+  if(type === 'ws') return genWordSearch(sd, ST.band, { theme: ST.theme }, LANG);
+  if(type === 'dots') return genDots(sd, ST.band, { shape: ST.shape, step: ST.step });
+  if(type === 'scr') return genScramble(sd, ST.band, { theme: ST.theme }, LANG);
+  if(type === 'spot') return genSpot(sd, ST.band);
+  return genMath(sd, ST.band, type);
+}
+function drawItem(it, solution){
+  if(it.type === 'ws') return drawWordSearch(it.p, solution);
+  if(it.type === 'dots') return drawDots(it.p, solution);
+  if(it.type === 'scr') return drawScramble(it.p, solution);
+  if(it.type === 'spot') return drawSpot(it.p, solution);
+  return drawMath(it.p, solution, LANG);
+}
+function itemFor(type, p, sd){
+  const tn = t('types')[TYPE_IDS.indexOf(type)], band = t('bands')[ST.band];
+  const extra = type === 'dots' ? p.name[LANG] : '';
+  return {
+    type: type, p: p, seed: sd,
+    caption: tn + ' · ' + band + ' · ' + t('numLabel') + ': ' + sd,
+    instr: type === 'ws' ? t('wsInstr')[ST.band] : type === 'dots' ? t('dotsInstr') + (p.step > 1 ? ' ' + t('dotsStep', p.step) : '') : type === 'scr' ? t('scrInstr') + (p.hint ? t('scrHint') : '') : type === 'spot' ? t('spotInstr', p.nd) : t(type === 'pyr' ? 'pyrInstr' : 'magInstr'),
+    solCaption: t('solCap', tn + ' #' + sd, extra || band)
+  };
+}
+function current(){ return itemFor(ST.type, puz, seed); }
+function renderSheet(){
+  const it = current();
+  $('sheet').innerHTML = '<svg viewBox="0 0 ' + PW + ' ' + PH + '" xmlns="http://www.w3.org/2000/svg"><rect width="' + PW + '" height="' + PH + '" fill="#fff"/>' +
+    opsToSvg(drawItem(it, showSol)) + '</svg>';
+  $('cap').textContent = it.caption;
+}
+function build(announceIt){
+  puz = makePuzzle(ST.type, seed);
+  showSol = false;
+  $('seedIn').value = seed; $('seedMsg').textContent = '';
+  updateChips(); updateSolBtn(); renderSheet(); updateExportUI();
+  if(announceIt) $('live').textContent = t('liveNew', t('types')[TYPE_IDS.indexOf(ST.type)], seed);
+}
+function updateSolBtn(){
+  $('solBtn').setAttribute('aria-pressed', String(showSol));
+  $('solLbl').textContent = showSol ? t('solHide') : t('solShow');
+}
+
+/* ---------- user interface ---------- */
+function chip(host, html, onClick){
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'chip'; b.innerHTML = html;
+  b.addEventListener('click', onClick); host.appendChild(b); return b;
+}
+const typeBtns = TYPE_IDS.map((id, i) => chip($('types'), '<span class="nm"></span>', () => { ST.type = id; persist(); build(true); }));
+const bandBtns = [0, 1, 2].map(i => chip($('bands'), '<span class="nm"></span><small></small>', () => { ST.band = i; persist(); build(true); }));
+const themeIds = ['mix'].concat(WS_THEMES.map(x => x.id));
+const themeBtns = themeIds.map(id => chip($('themes'), '<span class="nm"></span>', () => { ST.theme = id; persist(); build(true); }));
+const shapeIds = ['any'].concat(DOT_SHAPES.map(x => x.id));
+const shapeBtns = shapeIds.map(id => chip($('dshapes'), '<span class="nm"></span>', () => { ST.shape = id; persist(); build(true); }));
+const stepVals = [0, 1, 2, 5, 10];
+const stepBtns = stepVals.map(v => chip($('steps'), '<span class="nm"></span>', () => { ST.step = v; persist(); build(true); }));
+
+function updateChips(){
+  typeBtns.forEach((b, i) => { b.querySelector('.nm').textContent = t('types')[i]; b.setAttribute('aria-pressed', String(TYPE_IDS[i] === ST.type)); });
+  bandBtns.forEach((b, i) => {
+    b.querySelector('.nm').textContent = t('bands')[i]; b.querySelector('small').textContent = t('grades')[i];
+    b.setAttribute('aria-pressed', String(i === ST.band));
+  });
+  themeBtns.forEach((b, i) => {
+    b.querySelector('.nm').textContent = themeIds[i] === 'mix' ? t('themeMix') : WS_THEMES[i - 1].name[LANG];
+    b.setAttribute('aria-pressed', String(themeIds[i] === ST.theme));
+  });
+  shapeBtns.forEach((b, i) => {
+    b.querySelector('.nm').textContent = shapeIds[i] === 'any' ? t('shapeAny') : DOT_SHAPES[i - 1].name[LANG];
+    b.setAttribute('aria-pressed', String(shapeIds[i] === ST.shape));
+  });
+  stepBtns.forEach((b, i) => {
+    b.querySelector('.nm').textContent = stepVals[i] === 0 ? t('stepAuto') : t('stepN', stepVals[i]);
+    b.setAttribute('aria-pressed', String(stepVals[i] === ST.step));
+  });
+  $('optWs').hidden = ST.type !== 'ws' && ST.type !== 'scr'; $('optDots').hidden = ST.type !== 'dots';
+}
+
+$('newBtn').addEventListener('click', () => { seed = randomSeed(); build(true); });
+$('solBtn').addEventListener('click', () => { showSol = !showSol; updateSolBtn(); renderSheet(); });
+$('seedForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = parseInt($('seedIn').value, 10);
+  if(!(v >= 1 && v <= 9999)){ $('seedMsg').textContent = t('seedErr'); return; }
+  seed = v; build(true);
+});
+
+/* ---------- PDF ---------- */
+const pdfMsgState = { key: null, err: false };
+function pdfMessage(key, isErr){
+  pdfMsgState.key = key; pdfMsgState.err = !!isErr;
+  const m = $('pdfMsg'); m.textContent = key ? t(key) : ''; m.classList.toggle('err', !!isErr);
+}
+function pdfPages(){ return ST.count + (ST.solutions ? Math.ceil(ST.count / 4) : 0); }
+function updateExportUI(){
+  $('cntOut').textContent = ST.count;
+  $('cntMinus').disabled = ST.count <= 1; $('cntPlus').disabled = ST.count >= MAX_COUNT;
+  $('optSol').checked = ST.solutions;
+  $('pdfSum').textContent = t('pdfSum', ST.count, pdfPages());
+}
+$('cntMinus').addEventListener('click', () => { ST.count = Math.max(1, ST.count - 1); persist(); updateExportUI(); });
+$('cntPlus').addEventListener('click', () => { ST.count = Math.min(MAX_COUNT, ST.count + 1); persist(); updateExportUI(); });
+$('optSol').addEventListener('change', e => { ST.solutions = e.target.checked; persist(); updateExportUI(); });
+
+let dlPromise = null;
+function getDownloads(){
+  if(!dlPromise){
+    dlPromise = (window.claude && typeof window.claude.use === 'function' ? window.claude.use('downloads') : Promise.resolve(null))
+      .catch(() => null);
+  }
+  return dlPromise;
+}
+getDownloads().then(dl => { if(!dl){ $('pdfBtn').hidden = true; pdfMessage('pdfNoDl', false); } });
+
+$('pdfBtn').addEventListener('click', async () => {
+  const btn = $('pdfBtn');
+  const dl = await getDownloads();
+  if(!dl){ pdfMessage('pdfNoDl', true); return; }
+  if(!window.jspdf){ pdfMessage('pdfNoLib', true); return; }
+  btn.disabled = true; pdfMessage('pdfMaking', false);
+  await new Promise(r => setTimeout(r, 40));
+  try {
+    const items = [current()], used = new Set([seed]);
+    while(items.length < ST.count){
+      const sd = randomSeed();
+      if(used.has(sd)) continue;
+      used.add(sd); items.push(itemFor(ST.type, makePuzzle(ST.type, sd), sd));
+    }
+    const buf = buildPuzzlePdf(window.jspdf.jsPDF, { reg: FONT_REG, bold: FONT_BOLD }, items, {
+      solutions: ST.solutions, draw: drawItem,
+      tx: { brand: t('brand'), title: t('pdfDocTitle'), name: t('pdfName'), footer: t('pdfFooter'), solSub: t('solSub') }
+    });
+    pdfMessage('pdfReady', false);
+    await dl.save({ filename: 'puzzle-' + TYPE_FILE[ST.type] + '-' + seed + '-' + LANG + '.pdf', data: buf });
+    pdfMessage('pdfSaved', false);
+  } catch(err){
+    const code = err && err.code;
+    if(code === 'declined') pdfMessage('pdfDeclined', false);
+    else if(code === 'rate_limited') pdfMessage('pdfRate', true);
+    else pdfMessage('pdfFail', true);
+  } finally { btn.disabled = false; updateExportUI(); }
+});
+
+/* ---------- language ---------- */
+const langSel = $('langSel');
+[['hu', 'Magyar'], ['en', 'English']].forEach(l => { const o = document.createElement('option'); o.value = l[0]; o.textContent = l[1]; langSel.appendChild(o); });
+function applyI18n(){
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.dataset.t); });
+  document.querySelectorAll('[data-t-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.tAria)); });
+  document.querySelectorAll('.navlink').forEach(a => { if(a.dataset.nav === MODE) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  document.title = t('brand') + ' · ' + t('navPuzzles');
+  langSel.value = LANG; $('langCode').textContent = LANG.toUpperCase();
+  $('cntMinus').setAttribute('aria-label', '−'); $('cntPlus').setAttribute('aria-label', '+');
+  updateChips(); updateSolBtn(); updateExportUI();
+  if(pdfMsgState.key) pdfMessage(pdfMsgState.key, pdfMsgState.err);
+}
+langSel.addEventListener('change', e => {
+  LANG = T[e.target.value] ? e.target.value : 'en';
+  ST.lang = LANG; persist(); applyI18n();
+  if(ST.type === 'ws' || ST.type === 'scr') build(false); else renderSheet();
+});
+
+/* ---------- startup ---------- */
+const saved = load();
+ST.type = TYPE_IDS.indexOf(saved.type) >= 0 ? saved.type : 'ws';
+ST.band = clampInt(saved.band, 0, 2, 1);
+ST.theme = themeIds.indexOf(saved.theme) >= 0 ? saved.theme : 'mix';
+ST.shape = shapeIds.indexOf(saved.shape) >= 0 ? saved.shape : 'any';
+ST.step = stepVals.indexOf(saved.step) >= 0 ? saved.step : 0;
+ST.count = clampInt(saved.count, 1, MAX_COUNT, 1);
+ST.solutions = saved.solutions !== false;
+ST.lang = readLangPref() || ((saved.lang && T[saved.lang]) ? saved.lang : null);
+LANG = detectLang(ST.lang);
+seed = randomSeed();
+applyI18n();
+build(false);
+
+const FONT_REG = '__FONT_REG__';
+const FONT_BOLD = '__FONT_BOLD__';
+})();
+</script>

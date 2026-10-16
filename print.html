@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="hu">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Labirintus-gyár: gyerekbarát labirintusgenerátor és nyomtatható rejtvények, magyarul és angolul.">
+<meta name="description" content="Maze Factory: a kid-friendly maze generator and printable puzzles, in Hungarian and English.">
 <style>:root{color-scheme:light}html,body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
-<title>Labirintus-gyár · Nyomtatás</title>
+<title>Maze Factory · Print</title>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
 <style>
-/* Layout: a squared school notebook (kockás füzet) page. The maze sits on a hard-shadow board,
-   chunky pressable buttons sit within thumb reach, and four themed worlds re-skin the same maze. */
+/* Layout: a squared school notebook page. The maze sits on a hard-shadow board and
+   chunky pressable buttons sit within thumb reach. */
 :root{
   --paper:#F4F8FF; --grid:#D9E6F8; --card:#FFFFFF;
   --ink:#1B2559; --ink-soft:#4F5A8C;
@@ -172,7 +172,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-
 .note{margin:0;font-size:.92rem;line-height:1.45;color:var(--ink-soft);max-width:60ch}
 .note.err{color:var(--bad);font-weight:800}
 
-/* oldalak közötti menü */
+/* menu between pages */
 .sitenav{flex-basis:100%;order:3;display:none;flex-wrap:wrap;gap:8px}
 body.mode-play .sitenav,body.mode-print .sitenav{display:flex}
 .navlink{
@@ -181,7 +181,7 @@ body.mode-play .sitenav,body.mode-print .sitenav{display:flex}
   font:800 .95rem/1 var(--font-display);
 }
 .navlink[aria-current="page"]{background:var(--sun);color:var(--on-accent);transform:translateY(2px);box-shadow:0 1px 0 var(--edge)}
-/* oldalmódok: játék (index) és tömeges nyomtatás (nyomtatas) */
+/* page modes: play (index) and batch printing (print) */
 .sitelink,.backlink{display:none}
 a.btn{text-decoration:none}
 .printone{grid-column:1/-1}
@@ -252,8 +252,8 @@ body.mode-print .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"he
     </div>
     <nav class="sitenav" aria-label="Menu">
       <a class="navlink" href="index.html" data-nav="play" data-t="navPlay"></a>
-      <a class="navlink" href="nyomtatas.html" data-nav="print" data-t="navPrint"></a>
-      <a class="navlink" href="rejtvenyek.html" data-nav="puzzles" data-t="navPuzzles"></a>
+      <a class="navlink" href="print.html" data-nav="print" data-t="navPrint"></a>
+      <a class="navlink" href="puzzles.html" data-nav="puzzles" data-t="navPuzzles"></a>
     </nav>
     <div class="tools">
       <a class="btn small backlink" href="index.html" data-t="backToGame"></a>
@@ -355,7 +355,7 @@ body.mode-print .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"he
     <p class="note err" id="seedMsg" role="status"></p>
     <p class="note" data-t="seedNote"></p>
     <p class="note" data-t="howto"></p>
-    <a class="btn sitelink" id="moreLink" href="nyomtatas.html" data-t="printMore"></a>
+    <a class="btn sitelink" id="moreLink" href="print.html" data-t="printMore"></a>
   </section>
 
   <section class="print" aria-labelledby="printTitle">
@@ -416,7 +416,7 @@ function shuffle(arr, rnd){
 }
 
 
-// ---- alakzatok: a rács celláit egy maszk szűri
+// ---- shapes: a mask filters the grid cells
 function inPoly(px, py, pts){
   let c = false;
   for(let i = 0, j = pts.length - 1; i < pts.length; j = i++){
@@ -442,7 +442,7 @@ function insideShape(shape, u, v){
     default: return true;
   }
 }
-// shape 0 = négyzet (nincs maszk). Visszaad: Uint8Array, a legnagyobb összefüggő rész.
+// shape 0 = square (no mask). Returns a Uint8Array: the largest connected region.
 function makeMask(shape, n){
   if(!shape) return null;
   const m = new Uint8Array(n * n);
@@ -469,7 +469,7 @@ function makeMask(shape, n){
   for(let i = 0; i < n * n; i++) if(comp[i] === best) out[i] = 1;
   return out;
 }
-// A rácsméret alakzatnál nagyobb, hogy a forma jól látsszon.
+// Shaped grids are larger so that the shape is clearly visible.
 function gridSize(L, shape){
   if(!shape) return L.n;
   return L.custom ? Math.max(L.n, 7) : Math.max(9, Math.round(L.n * 1.5));
@@ -487,7 +487,7 @@ function distFrom(walls, n, from){
   }
   return dist;
 }
-// Alakzatnál a START a legfelső, a CÉL a legalsó sor egyik cellája, így a felirat kívülre kerül.
+// With a shape, START is a cell in the top row and GOAL one in the bottom row, so their labels fall outside the maze.
 function maskRows(mask, n){
   let lo = n, hi = 0;
   for(let i = 0; i < n * n; i++) if(mask[i]){ const r = (i / n) | 0; if(r < lo) lo = r; if(r > hi) hi = r; }
@@ -581,8 +581,8 @@ function pdfMaze(level, seed){
            sol: bfs(m.walls, level.n, m.start, m.goal) };
 }
 
-// A START és a CÉL cella külső fala nyitva marad, hogy legyen be- és kijárat.
-// Merre nyitjuk ki a START / CÉL cella külső falát: fel, le, jobbra, balra sorrendben az első szabad oldal.
+// The outer wall of the START and GOAL cells stays open so there is an entrance and an exit.
+// Which side of the START / GOAL cell to open: the first free side in the order up, down, right, left.
 function gateDir(m, i){
   const n = m.n, cx = i % n, cy = (i / n) | 0;
   if(m.mask){
@@ -777,7 +777,7 @@ en: {
 };
 //#endregion
 
-// Egyetlen, fekete-fehér kinézet: fehér padló, fekete falak.
+// A single black-and-white look: white floor, black walls.
 const WORLDS = [
   { hero:'🦔', goal:'🍎', floorA:'#FFFFFF', floorB:'#FFFFFF', wall:'#000000', speck:'#FFFFFF', thread:'rgba(255,107,61,.6)', glow:'255,226,122' }
 ];
@@ -803,7 +803,7 @@ const S = {
 };
 let W = 0, pad = 0, cell = 0, wallW = 0, dpr = 1, winTimer = 0, lastBumpSound = 0;
 
-/* ---------- nyelv ---------- */
+/* ---------- language ---------- */
 let LANG = 'en';
 function t(key){
   let v = T[LANG][key];
@@ -825,11 +825,11 @@ function detectLang(pref){
   return 'en';
 }
 
-/* ---------- mentés ---------- */
+/* ---------- persistence ---------- */
 const MODE = document.body.classList.contains('mode-print') ? 'print' : 'play';
-// A két oldal beállításai függetlenek: külön tárolókulcsot használnak. Csak a nyelv közös.
-const KEY = MODE === 'print' ? 'labirintus-nyomtatas' : 'labirintus-gyar';
-const LANG_KEY = 'labirintus-lang';
+// The pages' settings are independent: each uses its own storage key. Only the language is shared.
+const KEY = MODE === 'print' ? 'maze-factory-print' : 'maze-factory-play';
+const LANG_KEY = 'maze-factory-lang';
 function readLangPref(){ try { const v = localStorage.getItem(LANG_KEY); return (v && T[v]) ? v : null; } catch(e){ return null; } }
 function load(){ try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e){ return {}; } }
 function persist(){
@@ -842,7 +842,7 @@ function persist(){
 }
 function clampInt(v, lo, hi, dflt){ v = parseInt(v, 10); return (v >= lo && v <= hi) ? v : dflt; }
 
-/* ---------- hang ---------- */
+/* ---------- sound ---------- */
 let actx = null;
 function tone(freq, dur, type, vol, delay){
   if(!S.sound) return;
@@ -859,7 +859,7 @@ function tone(freq, dur, type, vol, delay){
 }
 function jingle(){ [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.28, 'triangle', 0.07, i * 0.12)); }
 
-/* ---------- segédek ---------- */
+/* ---------- helpers ---------- */
 function announce(msg){ const el = $('live'); el.textContent = ''; setTimeout(() => { el.textContent = msg; }, 30); }
 function starSvg(on){
   return '<svg viewBox="0 0 24 24"><polygon class="' + (on ? 'star-on' : 'star-off') +
@@ -867,7 +867,7 @@ function starSvg(on){
 }
 function randomSeed(){ return 1000 + Math.floor(Math.random() * 9000); }
 
-/* ---------- felület ---------- */
+/* ---------- UI ---------- */
 const levelsEl = $('levels');
 const levelNameEls = [];
 const levelSzEls = [];
@@ -913,7 +913,7 @@ function applyWorld(){
   if(W && S.walls) renderStatic();
 }
 
-/* ---------- labirintus felépítése ---------- */
+/* ---------- building the maze ---------- */
 function build(){
   const L = LEVELS[S.level], gn = gridSize(L, S.shape);
   const mask = makeMask(S.shape, gn), m = generate(gn, S.seed, L.braid, mask, S.shape);
@@ -937,7 +937,7 @@ function canGoBigger(){ return S.level < BIGGER_MAX || (S.level === CUSTOM && LE
 function setShape(i){ S.shape = i; persist(); S.seed = randomSeed(); build(); }
 function setLevel(i){ S.level = i; persist(); S.seed = randomSeed(); build(); }
 
-/* ---------- rajzolás ---------- */
+/* ---------- drawing ---------- */
 function layout(){
   const r = cv.getBoundingClientRect(), w = Math.floor(r.width);
   if(w < 40 || !S.walls) return;
@@ -1097,7 +1097,7 @@ function confetti(){
   }
 }
 
-/* ---------- játékmenet ---------- */
+/* ---------- gameplay ---------- */
 function move(dir){
   if(S.won || !S.walls) return false;
   if(S.walls[S.pos] & BIT[dir]){
@@ -1145,7 +1145,7 @@ function restart(){
   $('win').hidden = true; updateStats();
 }
 
-/* ---------- vezérlés ---------- */
+/* ---------- controls ---------- */
 const KEYS = { ArrowUp:0, ArrowRight:1, ArrowDown:2, ArrowLeft:3, w:0, d:1, s:2, a:3, W:0, D:1, S:2, A:3 };
 window.addEventListener('keydown', e => {
   if(e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1225,7 +1225,7 @@ $('seedForm').addEventListener('submit', e => {
   S.seed = v; build();
 });
 
-/* ---------- PDF exportálás ---------- */
+/* ---------- PDF export ---------- */
 const P = { shape: 0, counts: [2, 2, 2, 2, 0], per: 1, solutions: true, current: false };
 const MAX_EACH = 20, MAX_TOTAL = 40;
 const countsEl = $('counts'), perEl = $('perChips');
@@ -1336,7 +1336,7 @@ $('pdfBtn').addEventListener('click', async () => {
     const buf = buildPdf(window.jspdf.jsPDF, { reg: FONT_REG, bold: FONT_BOLD }, planBatches(),
       { per: P.per, solutions: P.solutions, tx: pdfStrings() });
     pdfMessage('pdfReady', false);
-    await dl.save({ filename: 'labirintus-gyar-' + LANG + '.pdf', data: buf });
+    await dl.save({ filename: 'maze-factory-' + LANG + '.pdf', data: buf });
     pdfMessage('pdfSaved', false);
   } catch(err){
     const code = err && err.code;
@@ -1361,7 +1361,7 @@ $('printOne').addEventListener('click', async () => {
     const buf = buildPdf(window.jspdf.jsPDF, { reg: FONT_REG, bold: FONT_BOLD }, [batch],
       { per: 1, solutions: true, tx: pdfStrings() });
     pdfMessage('pdfReady', false);
-    await dl.save({ filename: 'labirintus-' + S.seed + '-' + LANG + '.pdf', data: buf });
+    await dl.save({ filename: 'maze-' + S.seed + '-' + LANG + '.pdf', data: buf });
     pdfMessage('pdfSaved', false);
   } catch(err){
     const code = err && err.code;
@@ -1371,7 +1371,7 @@ $('printOne').addEventListener('click', async () => {
   } finally { btn.disabled = false; }
 });
 
-/* ---------- egyéni szint ---------- */
+/* ---------- custom level ---------- */
 const sizeRange = $('sizeRange'), sizeNum = $('sizeNum'), routeRange = $('routeRange'), routeNum = $('routeNum');
 let customTimer = 0;
 function clampNum(v, lo, hi){ v = Math.round(Number(v)); return isFinite(v) ? Math.max(lo, Math.min(hi, v)) : null; }
@@ -1406,7 +1406,7 @@ routeNum.addEventListener('input', () => {
 sizeNum.addEventListener('change', () => { const v = clampNum(sizeNum.value, SIZE_MIN, SIZE_MAX); applyCustom(v === null ? LEVELS[CUSTOM].n : v, null); });
 routeNum.addEventListener('change', () => { const v = clampNum(routeNum.value, 0, 100); applyCustom(null, v === null ? Math.round(LEVELS[CUSTOM].braid * 100) : v); });
 
-/* ---------- nyelvválasztó ---------- */
+/* ---------- language selector ---------- */
 const langSel = $('langSel');
 LANGS.forEach(l => {
   const o = document.createElement('option'); o.value = l[0]; o.textContent = l[1]; langSel.appendChild(o);
@@ -1431,7 +1431,7 @@ langSel.addEventListener('change', e => {
   S.langPref = LANG; persist(); applyI18n();
 });
 
-/* ---------- indulás ---------- */
+/* ---------- startup ---------- */
 const saved = load();
 S.world = 0;
 S.level = clampInt(saved.level, 0, LEVELS.length - 1, 1);

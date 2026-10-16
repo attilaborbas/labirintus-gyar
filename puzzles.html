@@ -1,17 +1,17 @@
 <!doctype html>
-<html lang="hu">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Labirintus-gyár: gyerekbarát labirintusgenerátor és nyomtatható rejtvények, magyarul és angolul.">
+<meta name="description" content="Maze Factory: a kid-friendly maze generator and printable puzzles, in Hungarian and English.">
 <style>:root{color-scheme:light}html,body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
-<title>Labirintus-gyár · Rejtvények</title>
+<title>Maze Factory · Puzzles</title>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 
-/* Layout: a squared school notebook (kockás füzet) page. The maze sits on a hard-shadow board,
-   chunky pressable buttons sit within thumb reach, and four themed worlds re-skin the same maze. */
+/* Layout: a squared school notebook page. The maze sits on a hard-shadow board and
+   chunky pressable buttons sit within thumb reach. */
 :root{
   --paper:#F4F8FF; --grid:#D9E6F8; --card:#FFFFFF;
   --ink:#1B2559; --ink-soft:#4F5A8C;
@@ -174,7 +174,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-
 .note{margin:0;font-size:.92rem;line-height:1.45;color:var(--ink-soft);max-width:60ch}
 .note.err{color:var(--bad);font-weight:800}
 
-/* oldalak közötti menü */
+/* menu between pages */
 .sitenav{flex-basis:100%;order:3;display:none;flex-wrap:wrap;gap:8px}
 body.mode-play .sitenav,body.mode-print .sitenav{display:flex}
 .navlink{
@@ -183,7 +183,7 @@ body.mode-play .sitenav,body.mode-print .sitenav{display:flex}
   font:800 .95rem/1 var(--font-display);
 }
 .navlink[aria-current="page"]{background:var(--sun);color:var(--on-accent);transform:translateY(2px);box-shadow:0 1px 0 var(--edge)}
-/* oldalmódok: játék (index) és tömeges nyomtatás (nyomtatas) */
+/* page modes: play (index) and batch printing (print) */
 .sitelink,.backlink{display:none}
 a.btn{text-decoration:none}
 .printone{grid-column:1/-1}
@@ -240,7 +240,7 @@ body.mode-print .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"he
   .btn,.icon-btn,.chip{transition:none}
 }
 
-/* rejtvény-oldal */
+/* puzzle page */
 body.mode-puzzles .sitenav{display:flex}
 .app.puz{grid-template-areas:"head" "pick" "stage" "play" "print"}
 @media (min-width:900px){
@@ -281,8 +281,8 @@ body.mode-puzzles .sitenav{display:flex}
     </div>
     <nav class="sitenav" aria-label="Menu">
       <a class="navlink" href="index.html" data-nav="play" data-t="navPlay"></a>
-      <a class="navlink" href="nyomtatas.html" data-nav="print" data-t="navPrint"></a>
-      <a class="navlink" href="rejtvenyek.html" data-nav="puzzles" data-t="navPuzzles"></a>
+      <a class="navlink" href="print.html" data-nav="print" data-t="navPrint"></a>
+      <a class="navlink" href="puzzles.html" data-nav="puzzles" data-t="navPuzzles"></a>
     </nav>
     <div class="tools">
       <label class="icon-btn lang">
@@ -366,8 +366,8 @@ body.mode-puzzles .sitenav{display:flex}
 'use strict';
 
 //#region puzzle-core
-// A rejtvények közös alapja: véletlen, korosztály-sávok, rajzoló műveletek (képernyő SVG és PDF).
-const PW = 515, PH = 660;   // egy rejtvény logikai rajzmezeje (pont, A4-en 1:1)
+// Shared base of the puzzles: randomness, age bands, drawing operations (screen SVG and PDF).
+const PW = 515, PH = 660;   // logical drawing area of one puzzle (points, 1:1 on A4)
 
 function mulberry32(a){
   return function(){
@@ -387,7 +387,7 @@ function shuffle(arr, rnd){
 function strHash(s){ let h = 7; for(let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; }
 function puzzleRng(seed, band, salt){ return mulberry32(seed * 7919 + band * 104729 + strHash(salt)); }
 
-// Korosztály-sávok: 0 = 6–7 év, 1 = 8–9 év, 2 = 10–12 év.
+// Age bands: 0 = ages 6–7, 1 = ages 8–9, 2 = ages 10–12.
 const ALL_DIRS = [[1, 0], [0, 1], [1, 1], [-1, 0], [0, -1], [-1, -1], [1, -1], [-1, 1]];
 const BANDS = [
   { ws: { n: 7,  count: 6,  minLen: 3, maxLen: 5,  dirs: [[1, 0], [0, 1]] },         dots: { n: 24,  step: 1 } },
@@ -395,11 +395,11 @@ const BANDS = [
   { ws: { n: 14, count: 12, minLen: 4, maxLen: 10, dirs: ALL_DIRS },                 dots: { n: 80,  step: 5 } }
 ];
 
-// ---- rajzoló műveletek ----
-// {k:'line', x1,y1,x2,y2, w, g}        g = szürkeárnyalat 0 (fekete) … 255 (fehér)
-// {k:'circle', x,y,r, w, g, fill}      fill = szürkeárnyalat vagy null
+// ---- drawing operations ----
+// {k:'line', x1,y1,x2,y2, w, g}        g = gray level 0 (black) … 255 (white)
+// {k:'circle', x,y,r, w, g, fill}      fill = gray level or null
 // {k:'poly', pts:[[x,y],…], w, g, close}
-// {k:'text', x,y, s, size, b, a:'l'|'c'|'r', g}   y = alapvonal
+// {k:'text', x,y, s, size, b, a:'l'|'c'|'r', g}   y = baseline
 function gray(g){ g = g == null ? 0 : g; return 'rgb(' + g + ',' + g + ',' + g + ')'; }
 function esc(s){ return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function opsToSvg(ops){
@@ -445,7 +445,7 @@ function opsToPdf(doc, ops, ox, oy, sc){
   }
 }
 
-// ---- PDF oldalak ----
+// ---- PDF pages ----
 // items: [{ type, p, caption, instr, solCaption }], opts: { solutions, tx, draw: (item, solution) => ops }
 const PDF_W = 595.28, PDF_H = 841.89;
 function buildPuzzlePdf(jsPDF, fonts, items, opts){
@@ -491,7 +491,7 @@ function buildPuzzlePdf(jsPDF, fonts, items, opts){
 }
 //#endregion
 //#region puzzle-words
-// Szólisták a szókeresőhöz. Nagybetűvel, egy szó, szóköz és kötőjel nélkül.
+// Word lists for the word search and scramble. Upper case, single words, no spaces or hyphens.
 const WS_THEMES = [
   { id: 'animals', name: { hu: 'Állatok', en: 'Animals' }, w: {
     hu: 'KUTYA MACSKA MADÁR TEHÉN DISZNÓ KECSKE NYÚL EGÉR MÉH PILLANGÓ KÍGYÓ BÉKA TEKNŐS OROSZLÁN ELEFÁNT MAJOM ZEBRA MEDVE RÓKA FARKAS SÜNI VERÉB SZARVAS KACSA LIBA CSIRKE HOLLÓ DELFIN CICA MÓKUS HAL',
@@ -539,7 +539,7 @@ function genWordSearch(seed, band, st, lang){
 function genWordSearchTry(seed, band, st, lang, attempt){
   const B = BANDS[band].ws, n = B.n, dirs = B.dirs;
   const rnd = puzzleRng(seed, band, 'ws' + st.theme + lang + (attempt ? '#' + attempt : ''));
-  // szavak kiválasztása
+  // choose the words
   let pool = themeWords(st.theme, lang).filter(w => w.length >= B.minLen && w.length <= Math.min(B.maxLen, n));
   if(pool.length < B.count){
     const extra = themeWords('mix', lang).filter(w => w.length >= B.minLen && w.length <= Math.min(B.maxLen, n) && pool.indexOf(w) < 0);
@@ -550,13 +550,13 @@ function genWordSearchTry(seed, band, st, lang, attempt){
   const chosen = [];
   for(const w of pool){
     if(chosen.length >= B.count) break;
-    // ne legyen egyik szó a másik része (előre-hátra sem)
+    // no word may be part of another (forwards or backwards)
     if(chosen.some(c => c.indexOf(w) >= 0 || w.indexOf(c) >= 0 || c.indexOf(rev(w)) >= 0 || w.indexOf(rev(c)) >= 0)) continue;
     chosen.push(w);
   }
   chosen.sort((a, b) => b.length - a.length);
 
-  // elhelyezés
+  // placement
   let grid, placed;
   for(let round = 0; round < 80; round++){
     grid = new Array(n * n).fill(''); placed = [];
@@ -585,7 +585,7 @@ function genWordSearchTry(seed, band, st, lang, attempt){
   }
   const locked = grid.map(c => c !== '');
 
-  // töltőbetűk: a nyelv betűgyakorisága szerint, hogy az ékezetes betűk ne áruljanak el semmit
+  // filler letters follow the language's letter frequency so accented letters give nothing away
   const bag = [];
   const freq = {};
   themeWords('mix', lang).forEach(w => w.split('').forEach(ch => { freq[ch] = (freq[ch] || 0) + 1; }));
@@ -593,7 +593,7 @@ function genWordSearchTry(seed, band, st, lang, attempt){
   const fill = () => bag[Math.floor(rnd() * bag.length)];
   for(let i = 0; i < n * n; i++) if(!locked[i]) grid[i] = fill();
 
-  // minden szó pontosan egyszer szerepeljen (csak az engedélyezett irányokban)
+  // every word must occur exactly once (only in the allowed directions)
   const countOcc = w => {
     let cnt = 0;
     for(let y = 0; y < n; y++) for(let x = 0; x < n; x++) for(const d of dirs){
@@ -615,7 +615,7 @@ function genWordSearchTry(seed, band, st, lang, attempt){
   return { ok: ok, n: n, grid: grid, placed: placed, list: list, band: band, lang: lang, theme: st.theme, dirs: dirs.length };
 }
 
-// Kirajzolás: a rács nagy, alatta a szólista pipanégyzetekkel.
+// Drawing: a large grid with the word list and tick boxes below it.
 function drawWordSearch(p, solution){
   const ops = [], n = p.n, gs = Math.min(450, PW - 20), cell = gs / n, x0 = (PW - gs) / 2, y0 = 6;
   if(solution){
@@ -646,8 +646,8 @@ function drawWordSearch(p, solution){
 }
 //#endregion
 //#region puzzle-dots
-// Pontösszekötő: zárt kontúrok, a sarkok mindig pontok, a többi pont egyenletesen oszlik el.
-// A pontok [x, y, sarok?] alakban vannak, y lefelé nő.
+// Dot-to-dot: closed outlines; corners are always dots, the remaining dots are spread evenly.
+// Points are [x, y, isCorner]; y grows downwards.
 function C(x, y){ return [x, y, true]; }
 function Sm(x, y){ return [x, y, false]; }
 function curve(f, t0, t1, n){ const a = []; for(let i = 1; i < n; i++){ const t = t0 + (t1 - t0) * i / n; const q = f(t); a.push(Sm(q[0], q[1])); } return a; }
@@ -694,7 +694,7 @@ const DOT_SHAPES = [
 
 function polyArea(pts){ let a = 0; for(let i = 0; i < pts.length; i++){ const q = pts[(i + 1) % pts.length]; a += pts[i][0] * q[1] - q[0] * pts[i][1]; } return a / 2; }
 
-// A kontúrból N pontot választ: az összes sarok + a sarkok közötti szakaszokon egyenletesen elosztott többi.
+// Picks N dots from the outline: all corners plus the rest spread evenly between the corners.
 function pickDots(pts, N){
   const m = pts.length, cum = [0];
   for(let i = 0; i < m; i++){ const q = pts[(i + 1) % m]; cum.push(cum[i] + Math.hypot(q[0] - pts[i][0], q[1] - pts[i][1])); }
@@ -704,7 +704,7 @@ function pickDots(pts, N){
   cs.sort((x, y) => x - y);
   const pieces = cs.map((st, i) => { const en = i + 1 < cs.length ? cs[i + 1] : cs[0] + total; return { st: st, len: en - st, k: 0 }; });
   let rest = Math.max(0, N - cs.length);
-  // legnagyobb maradék módszer: a szakaszok hosszával arányosan
+  // largest-remainder method: proportional to the piece lengths
   const sumLen = pieces.reduce((x, p) => x + p.len, 0);
   pieces.forEach(p => { p.exact = rest * p.len / sumLen; p.k = Math.floor(p.exact); });
   let left = rest - pieces.reduce((x, p) => x + p.k, 0);
@@ -719,7 +719,7 @@ function pickDots(pts, N){
   });
 }
 
-// st: { shape: 'any' | id, step: 0 (korosztály szerint) | 1 | 2 | 5 | 10 }
+// st: { shape: 'any' | id, step: 0 (by age band) | 1 | 2 | 5 | 10 }
 function genDots(seed, band, st){
   const B = BANDS[band].dots, rnd = puzzleRng(seed, band, 'dots' + st.shape);
   const shapes = st.shape === 'any' ? DOT_SHAPES : DOT_SHAPES.filter(s => s.id === st.shape);
@@ -728,12 +728,12 @@ function genDots(seed, band, st){
   if(polyArea(pts) < 0) pts = pts.slice().reverse();
   const corners = pts.filter(q => q[2]).length;
   let dots = pickDots(pts, Math.max(B.n, corners + 2));
-  // a legfelső pont (egyenlőknél a középsőhöz legközelebbi) legyen az első
+  // the topmost dot (the one closest to the middle on ties) becomes the first
   let bi = 0;
   const mid = dots.reduce((a, q) => a + q[0], 0) / dots.length;
   dots.forEach((q, i) => { const b = dots[bi]; if(q[1] < b[1] - 1e-6 || (Math.abs(q[1] - b[1]) < 1e-6 && Math.abs(q[0] - mid) < Math.abs(b[0] - mid))) bi = i; });
   dots = dots.slice(bi).concat(dots.slice(0, bi));
-  // méretre igazítás
+  // fit to size
   let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
   dots.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
   const S = 410, sc = S / Math.max(x1 - x0, y1 - y0), ox = (PW - (x1 - x0) * sc) / 2, oy = 50 + (S - (y1 - y0) * sc) / 2;
@@ -749,15 +749,15 @@ function drawDots(p, solution){
     pos.forEach(q => ops.push({ k: 'circle', x: q[0], y: q[1], r: 2.6, fill: 0, w: 0 }));
     return ops;
   }
-  // átlagos pontköz → betűméret
+  // average dot gap → label size
   let per = 0; pos.forEach((q, i) => { const r = pos[(i + 1) % n]; per += Math.hypot(r[0] - q[0], r[1] - q[1]); });
   const gap = per / n, size = Math.max(8, Math.min(15, gap * 0.52)), dr = Math.max(2.4, Math.min(4.5, gap * 0.16));
   const placed = [];
   pos.forEach((q, i) => {
     const a = pos[(i + n - 1) % n], b = pos[(i + 1) % n];
     let tx = b[0] - a[0], ty = b[1] - a[1]; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
-    let nx = ty, ny = -tx;                        // kifelé mutató normális (az alakzat az óramutató járásával megy)
-    // sarkoknál a szögfelező mutat kifelé: kupak sarok → a szomszédok felé mutató egységvektorok összegének ellentettje
+    let nx = ty, ny = -tx;                        // outward-pointing normal (the shape runs clockwise)
+    // at corners the angle bisector points outward: the negated sum of the unit vectors towards the neighbours
     const ua = [a[0] - q[0], a[1] - q[1]], ub = [b[0] - q[0], b[1] - q[1]];
     const la = Math.hypot(ua[0], ua[1]) || 1, lb = Math.hypot(ub[0], ub[1]) || 1;
     const sx = ua[0] / la + ub[0] / lb, sy = ua[1] / la + ub[1] / lb, sl = Math.hypot(sx, sy);
@@ -783,14 +783,14 @@ function drawDots(p, solution){
 }
 //#endregion
 //#region puzzle-math
-// Matek-rejtvények: számpiramis és varázsnégyzet. Egy lapon 6 kis feladvány van.
+// Maths puzzles: number pyramid and magic square. One sheet holds 6 small puzzles.
 const MATH_PER_SHEET = 6;
 const PYR = [
   { rows: 3, lo: 1, hi: 6,  hide: 3 },
   { rows: 4, lo: 1, hi: 9,  hide: 5 },
   { rows: 5, lo: 2, hi: 15, hide: 8 }
 ];
-// pyramid[i][j]: i = sor fentről (0 = csúcs), j = tégla; a gyerekei: [i+1][j] és [i+1][j+1]
+// pyramid[i][j]: i = row from the top (0 = apex), j = brick; its children are [i+1][j] and [i+1][j+1]
 function pyrSolvable(vals, known){
   const k = known.map(r => r.slice()), R = vals.length;
   let ch = true;
@@ -897,7 +897,7 @@ function drawMath(p, solution, lang){
 }
 //#endregion
 //#region puzzle-scramble
-// Betűkeverő: összekevert betűkből ki kell találni a szót és beírni a négyzetekbe.
+// Word scramble: work out the word hidden in the mixed-up letters and write it in the boxes.
 const SCR = [
   { n: 6, minLen: 3, maxLen: 5,  hint: true },
   { n: 8, minLen: 4, maxLen: 7,  hint: false },
@@ -938,7 +938,7 @@ function drawScramble(p, solution){
 }
 //#endregion
 //#region puzzle-spot
-// Hibakereső: két majdnem egyforma kép, a különbségeket meg kell találni.
+// Spot the difference: two almost identical pictures; find the differences.
 const SPOT = [
   { nd: 3, kinds: ['remove', 'swap', 'size'] },
   { nd: 5, kinds: ['remove', 'swap', 'size', 'add', 'variant'] },
@@ -1036,7 +1036,7 @@ const $ = id => document.getElementById(id);
 const MODE = 'puzzles';
 const MAX_COUNT = 12;
 
-/* ---------- szövegek (magyar és angol) ---------- */
+/* ---------- texts (Hungarian and English) ---------- */
 const T = {
 hu: {
   language:'Nyelv', brand:'Labirintus-gyár', tag:'Nyomtatható rejtvények gyerekeknek', settings:'Beállítások',
@@ -1120,8 +1120,8 @@ function detectLang(pref){
   return 'en';
 }
 
-/* ---------- állapot és mentés ---------- */
-const KEY = 'labirintus-rejtveny', LANG_KEY = 'labirintus-lang';
+/* ---------- state and persistence ---------- */
+const KEY = 'maze-factory-puzzles', LANG_KEY = 'maze-factory-lang';
 const ST = { type: 'ws', band: 1, theme: 'mix', shape: 'any', step: 0, count: 1, solutions: true, lang: null };
 let seed = 0, puz = null, showSol = false;
 function load(){ try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e){ return {}; } }
@@ -1135,9 +1135,9 @@ function readLangPref(){ try { const v = localStorage.getItem(LANG_KEY); return 
 function clampInt(v, lo, hi, d){ v = parseInt(v, 10); return (v >= lo && v <= hi) ? v : d; }
 function randomSeed(){ return 1 + Math.floor(Math.random() * 9999); }
 
-/* ---------- rejtvény előállítása és kirajzolása ---------- */
+/* ---------- generating and drawing the puzzle ---------- */
 const TYPE_IDS = ['ws', 'dots', 'pyr', 'magic', 'scr', 'spot'];
-const TYPE_FILE = { ws: 'szokereso', dots: 'pontosszekoto', pyr: 'szampiramis', magic: 'varazsnegyzet', scr: 'betukevero', spot: 'hibakereso' };
+const TYPE_FILE = { ws: 'word-search', dots: 'dot-to-dot', pyr: 'number-pyramid', magic: 'magic-square', scr: 'word-scramble', spot: 'spot-the-difference' };
 function makePuzzle(type, sd){
   if(type === 'ws') return genWordSearch(sd, ST.band, { theme: ST.theme }, LANG);
   if(type === 'dots') return genDots(sd, ST.band, { shape: ST.shape, step: ST.step });
@@ -1181,7 +1181,7 @@ function updateSolBtn(){
   $('solLbl').textContent = showSol ? t('solHide') : t('solShow');
 }
 
-/* ---------- kezelőfelület ---------- */
+/* ---------- user interface ---------- */
 function chip(host, html, onClick){
   const b = document.createElement('button');
   b.type = 'button'; b.className = 'chip'; b.innerHTML = html;
@@ -1281,7 +1281,7 @@ $('pdfBtn').addEventListener('click', async () => {
       tx: { brand: t('brand'), title: t('pdfDocTitle'), name: t('pdfName'), footer: t('pdfFooter'), solSub: t('solSub') }
     });
     pdfMessage('pdfReady', false);
-    await dl.save({ filename: 'rejtveny-' + TYPE_FILE[ST.type] + '-' + seed + '-' + LANG + '.pdf', data: buf });
+    await dl.save({ filename: 'puzzle-' + TYPE_FILE[ST.type] + '-' + seed + '-' + LANG + '.pdf', data: buf });
     pdfMessage('pdfSaved', false);
   } catch(err){
     const code = err && err.code;
@@ -1291,7 +1291,7 @@ $('pdfBtn').addEventListener('click', async () => {
   } finally { btn.disabled = false; updateExportUI(); }
 });
 
-/* ---------- nyelv ---------- */
+/* ---------- language ---------- */
 const langSel = $('langSel');
 [['hu', 'Magyar'], ['en', 'English']].forEach(l => { const o = document.createElement('option'); o.value = l[0]; o.textContent = l[1]; langSel.appendChild(o); });
 function applyI18n(){
@@ -1311,7 +1311,7 @@ langSel.addEventListener('change', e => {
   if(ST.type === 'ws' || ST.type === 'scr') build(false); else renderSheet();
 });
 
-/* ---------- indulás ---------- */
+/* ---------- startup ---------- */
 const saved = load();
 ST.type = TYPE_IDS.indexOf(saved.type) >= 0 ? saved.type : 'ws';
 ST.band = clampInt(saved.band, 0, 2, 1);
